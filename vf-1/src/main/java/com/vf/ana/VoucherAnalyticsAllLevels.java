@@ -118,6 +118,8 @@ public class VoucherAnalyticsAllLevels {
 			e.printStackTrace();
 		}
 
+		
+		
 		try {
 			double remaining = rec.first().getDouble("rem");
 			ret.put(Constants.VOUCHER_REMAINING, remaining);
@@ -134,6 +136,95 @@ public class VoucherAnalyticsAllLevels {
 		
 	}
 	
+	
+	//For top level
+	/**
+	 * Total - with filter and dates and without filter and dates
+	 */
+	public Map<String, Double> getTotalVoucherRemaining(Map<String, List<String>> filterMap, List<String> yyyymm) {
+		Map<String, Double> ret = new HashMap<>();
+		
+		List<Bson> pipeLine = new ArrayList<>();
+
+		if(filterMap!=null) {
+			Bson q1QryMatch = common.formMatchClauseForListFilterBson(filterMap);
+			pipeLine.add(q1QryMatch);
+		}
+
+		String qConvDate = "{$project:{"
+				+ "_id: 0, "
+				+ "ivu:'$invoiceUnitPriceAsPerTc', "
+				+ "poN:'$purchaseOrderNumberOne', "
+				+ "poQ: '$quantityOrderedPurchaseOrder', "
+				+ "net: '$netPricePOPrice', "
+				+ "priceUnitPo: '$priceUnitPo', "
+				+ "idyy : {$dateToString: { format: '%Y-%m', date: '$invoiceDate' }}, "
+				+ "podtyy : {$dateToString: { format: '%Y-%m', date: '$purchaseOrderCreationDate' }},"
+				+ "vouch : '$voucherConsumed'"
+		+ "} }";
+		
+		pipeLine.add(BasicDBObject.parse(qConvDate));			
+
+		
+		// add dateFilters
+		if (yyyymm != null && yyyymm.size() > 0) {
+			Bson dateFilter = match(in("podtyy", yyyymm));
+			pipeLine.add(dateFilter);
+		}
+		
+		//now unwind
+//		pipeLine.add(Aggregates.unwind("$vouch", new UnwindOptions().preserveNullAndEmptyArrays(true)));
+		pipeLine.add(Aggregates.unwind("$vouch"));
+
+		common.printDocs(collectionName, pipeLine, mongoTemplate);
+		
+		//now getminimum
+//		pipeLine.add(Aggregates.unwind("$vouch", new UnwindOptions().preserveNullAndEmptyArrays(true)));
+		pipeLine.add(BasicDBObject.parse("{$group:{_id:'$voucherId', rem:{'$min':'$vouch.remaining'}}}"));
+
+		common.printDocs(collectionName, pipeLine, mongoTemplate);
+		
+		
+		//now Sum them up
+		pipeLine.add(BasicDBObject.parse("{$group:{_id:null, con:{'$sum':'$vouch.consumed'}, rem:{'$sum':'$vouch.remaining'}}}"));
+		
+		printDocs(collectionName, pipeLine);
+		
+		MongoDatabase mongo = mongoTemplate.getDb();
+		AggregateIterable<Document> rec = mongo.getCollection(collectionName).aggregate(
+				pipeLine
+			)
+		;
+		
+		
+		try {
+			double consumed = rec.first().getDouble("con");
+			ret.put(Constants.VOUCHER_CONSUMED, consumed);
+		}catch(NullPointerException nx) {
+			logger.error(nx.getMessage());
+			nx.printStackTrace();
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+
+		
+		
+		try {
+			double remaining = rec.first().getDouble("rem");
+			ret.put(Constants.VOUCHER_REMAINING, remaining);
+		}catch(NullPointerException nx) {
+			logger.error(nx.getMessage());
+			nx.printStackTrace();
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		
+		logger.debug("{}", ret);
+		
+		return ret;
+		
+	}
+
 	
 	//get for last 7 days
 	public Map<String, Map<String, Double>> getTotalVoucherKPIsForLast7Days(Map<String, List<String>> filterMap) {

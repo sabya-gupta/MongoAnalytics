@@ -19,6 +19,11 @@ public class VoucherTests {
 
 	Logger logger = LoggerFactory.getLogger(getClass());
 	
+	
+	@Test
+	public void topLevelTestsForVR() {
+		voucherAnalyticsAllLevels.getTotalVoucherRemaining(null, null);
+	}	
 	@Test
 	public void topLevelTests() {
 		voucherAnalyticsAllLevels.getTotalVoucherKPIs(null, null);
