@@ -1,3 +1,5 @@
+https://xd.adobe.com/view/15430069-139b-4c92-6df3-36c79e179085-6372/screen/001e8364-2730-4691-add8-a097a0a94768/
+
 db.testDB.aggregate([{$group:{_id:{supplier: '$supp', country:'$cntry'}, totalOV: {$sum:'$ov'}}}, {$sort:{totalOV:-1}} ])
 
 db.testDB.aggregate([{$group:{_id:{$concat:[{$toString:{$year:'$dt'}},'-',{$toString:{$month:'$dt'}}]}, totalOV: {$sum:'$ov'}}}, {$sort:{_id:-1}} ])
@@ -850,4 +852,42 @@ db.ValueLeakageInvoicePurchaseOrder.aggregate([
 			}
 	},
 }}
+])
+
+
+
+
+db.ValueLeakageInvoicePurchaseOrder.aggregate([
+{$project:{
+    '_id': 0,
+    'tradingModel':1,
+    'priceAgreementReferenceName':1,
+    'supplierName':1,
+    'opcoCode':1,
+    'outlineAgreementNumber':1,
+     vl: {$slice:['$valueLeakages', -1]}
+    }
+},
+{$unwind: { path: '$vl' }},
+{$project: {
+    'tradingModel':1,
+    'priceAgreementReferenceName':1,
+    'supplierName':1,
+    'opcoCode':1,
+    'outlineAgreementNumber':1,
+    dtt:'$vl.calculationDate', 
+    yyyymm: {$dateToString: { format: '%Y-%m', date: '$vl.calculationDate' }}, 
+    val: '$vl.leakageValue'}},
+{$group:{_id:{
+    tm: '$tradingModel',
+    pa:'$priceAgreementReferenceName',
+    sn: '$supplierName',
+    oc: '$opcoCode',
+    ola: '$outlineAgreementNumber',
+    dt: '$yyyymm'}, val:{$sum:'$val'}
+}},
+{$project:{tm:'$_id.tm', pa:'$_id.pa', sn:'$_id.sn', oc:'$_id.oc', ola:'$_id.ola', dt:'$_id.dt', val:'$val'}},
+{$skip: 5},
+{$limit: 5}
+//ddddd
 ])
