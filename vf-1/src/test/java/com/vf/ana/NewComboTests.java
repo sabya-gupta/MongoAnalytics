@@ -118,7 +118,7 @@ public class NewComboTests {
 		String grpByPropName = Constants.PROP_SUPPLIER_PART_NUMBER;
 //		String kpiToOrderBy = Constants.KPI_ACTIVEPA_COUNT;
 //		String kpiToOrderBy = Constants.KPI_ORDER_VALUE;
-		String kpiToOrderBy = Constants.KPI_ACTIVEITEMS_COUNT;
+		String kpiToOrderBy = Constants.KPI_VVREMAINING_VALUE;
 
 		
 		Map<String, List<String>> filter1 = new HashMap<>();

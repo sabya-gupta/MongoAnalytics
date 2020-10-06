@@ -20,9 +20,11 @@ public class VoucherTests {
 	Logger logger = LoggerFactory.getLogger(getClass());
 	
 	
+	
 	@Test
 	public void topLevelTestsForVR() {
-		voucherAnalyticsAllLevels.getTotalVoucherRemaining(null, null);
+//		voucherAnalyticsAllLevels.getTotalVoucherRemaining(null, null, new HashMap<String, Double>());
+		voucherAnalyticsAllLevels.getTotalVoucherKPIs(null, null);
 	}	
 	@Test
 	public void topLevelTests() {
@@ -68,7 +70,8 @@ public class VoucherTests {
 	KPIFilterAndGroupByHandler kPIFilterAndGroupByHandler;
 	
 	@Test
-	public void secondLevelTests() {
+	public void secondLevelTests2() {
+		
 		
 		String groupByPropName = Constants.PROP_MATERIAL_GROUP_4;
 		int dir = Constants.SORT_DIRECTION_ASCENDING;
@@ -78,6 +81,28 @@ public class VoucherTests {
 		String searchStr = null;
 		String orderByKPI = Constants.KPI_VV_VALUE;
 
+		kPIFilterAndGroupByHandler.getTotalVoucherREMAININGValue(groupByPropName, dir, argfilter, pgNum, yyyymm, new HashMap<String, Map<String,Double>>(), false, searchStr);
+
+	}	
+		
+	@Test
+	public void secondLevelTests() {
+		
+		
+		String groupByPropName = Constants.PROP_MATERIAL_GROUP_4;
+		int dir = Constants.SORT_DIRECTION_ASCENDING;
+		Map<String, List<String>> argfilter = null;
+		int pgNum = 0;
+		List<String> yyyymm = null;
+		String searchStr = null;
+		String orderByKPI = Constants.KPI_VV_VALUE;
+
+		kPIFilterAndGroupByHandler.getTotalVoucherREMAININGValue(groupByPropName, dir, argfilter, pgNum, yyyymm, new HashMap<String, Map<String,Double>>(), false, searchStr);
+
+		
+		
+		
+		
 		kPIFilterAndGroupByHandler.getDataByProp(groupByPropName, orderByKPI, dir, argfilter, pgNum, yyyymm, searchStr);
 		kPIFilterAndGroupByHandler.getDataCOUNTByProp(groupByPropName, orderByKPI, dir, argfilter, yyyymm, searchStr);
 

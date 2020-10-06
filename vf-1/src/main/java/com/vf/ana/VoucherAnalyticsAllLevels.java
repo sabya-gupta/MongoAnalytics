@@ -120,16 +120,7 @@ public class VoucherAnalyticsAllLevels {
 
 		
 		
-		try {
-			double remaining = rec.first().getDouble("rem");
-			ret.put(Constants.VOUCHER_REMAINING, remaining);
-		}catch(NullPointerException nx) {
-			logger.error(nx.getMessage());
-			nx.printStackTrace();
-		}catch(Exception e) {
-			e.printStackTrace();
-		}
-		
+		getTotalVoucherRemaining(filterMap, yyyymm, ret);
 		logger.debug("{}", ret);
 		
 		return ret;
@@ -141,8 +132,7 @@ public class VoucherAnalyticsAllLevels {
 	/**
 	 * Total - with filter and dates and without filter and dates
 	 */
-	public Map<String, Double> getTotalVoucherRemaining(Map<String, List<String>> filterMap, List<String> yyyymm) {
-		Map<String, Double> ret = new HashMap<>();
+	public void getTotalVoucherRemaining(Map<String, List<String>> filterMap, List<String> yyyymm, Map<String, Double> ret) {
 		
 		List<Bson> pipeLine = new ArrayList<>();
 
@@ -176,17 +166,21 @@ public class VoucherAnalyticsAllLevels {
 //		pipeLine.add(Aggregates.unwind("$vouch", new UnwindOptions().preserveNullAndEmptyArrays(true)));
 		pipeLine.add(Aggregates.unwind("$vouch"));
 
-		common.printDocs(collectionName, pipeLine, mongoTemplate);
+//		common.printDocs(collectionName, pipeLine, mongoTemplate);
+		
+		int cnt = common.getCount(collectionName, pipeLine, mongoTemplate);
+		logger.debug("1 {}", cnt);
 		
 		//now getminimum
 //		pipeLine.add(Aggregates.unwind("$vouch", new UnwindOptions().preserveNullAndEmptyArrays(true)));
-		pipeLine.add(BasicDBObject.parse("{$group:{_id:'$voucherId', rem:{'$min':'$vouch.remaining'}}}"));
+		pipeLine.add(BasicDBObject.parse("{$group:{_id:'$vouch.voucherId', rem:{'$min':'$vouch.remaining'}}}"));
 
-		common.printDocs(collectionName, pipeLine, mongoTemplate);
-		
+//		common.printDocs(collectionName, pipeLine, mongoTemplate);
+		cnt = common.getCount(collectionName, pipeLine, mongoTemplate);
+		logger.debug("{}", cnt);
 		
 		//now Sum them up
-		pipeLine.add(BasicDBObject.parse("{$group:{_id:null, con:{'$sum':'$vouch.consumed'}, rem:{'$sum':'$vouch.remaining'}}}"));
+		pipeLine.add(BasicDBObject.parse("{$group:{_id:null, rem:{'$sum':'$rem'}}}"));
 		
 		printDocs(collectionName, pipeLine);
 		
@@ -195,20 +189,7 @@ public class VoucherAnalyticsAllLevels {
 				pipeLine
 			)
 		;
-		
-		
-		try {
-			double consumed = rec.first().getDouble("con");
-			ret.put(Constants.VOUCHER_CONSUMED, consumed);
-		}catch(NullPointerException nx) {
-			logger.error(nx.getMessage());
-			nx.printStackTrace();
-		}catch(Exception e) {
-			e.printStackTrace();
-		}
-
-		
-		
+				
 		try {
 			double remaining = rec.first().getDouble("rem");
 			ret.put(Constants.VOUCHER_REMAINING, remaining);
@@ -220,9 +201,7 @@ public class VoucherAnalyticsAllLevels {
 		}
 		
 		logger.debug("{}", ret);
-		
-		return ret;
-		
+				
 	}
 
 	

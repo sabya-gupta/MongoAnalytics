@@ -99,10 +99,10 @@ public class KPIFilterAndGroupByHandler {
 			return getTotalLeakageValue(grpByPropName, dir, filter, pgNum, dates, null, false, searchStr);
 
 		if (orderByKPI.equalsIgnoreCase(Constants.KPI_VV_VALUE))
-			return getTotalVoucherValue(grpByPropName, dir, filter, pgNum, dates, null, false, searchStr, true);
+			return getTotalVoucherValue(grpByPropName, dir, filter, pgNum, dates, null, false, searchStr);
 
 		if (orderByKPI.equalsIgnoreCase(Constants.KPI_VVREMAINING_VALUE))
-			return getTotalVoucherValue(grpByPropName, dir, filter, pgNum, dates, null, false, searchStr, false);
+			return getTotalVoucherREMAININGValue(grpByPropName, dir, filter, pgNum, dates, null, false, searchStr);
 
 		return null;
 	}
@@ -128,8 +128,11 @@ public class KPIFilterAndGroupByHandler {
 		if (orderByKPI.equalsIgnoreCase(Constants.KPI_VLIDENTIFIED_COUNT))
 			return getTotalLeakageValueCount(grpByPropName, dir, filter, dates, searchStr);
 
-		if (orderByKPI.equalsIgnoreCase(Constants.KPI_VV_VALUE)  || orderByKPI.equalsIgnoreCase(Constants.KPI_VVREMAINING_VALUE))
+		if (orderByKPI.equalsIgnoreCase(Constants.KPI_VV_VALUE))
 			return getTotalVoucherItemsCOUNT(grpByPropName, filter, dates, searchStr);
+
+		if (orderByKPI.equalsIgnoreCase(Constants.KPI_VVREMAINING_VALUE))
+			return getTotalVoucherREMAINING_COUNT(grpByPropName, filter, dates, searchStr);
 
 		return 0;
 	}
@@ -234,9 +237,9 @@ public class KPIFilterAndGroupByHandler {
 
 			getTotalLeakageValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 			
-			getTotalVoucherValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr, true);
+			getTotalVoucherValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 //
-			getTotalVoucherValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr, false);
+			getTotalVoucherREMAININGValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 
 		}
 
@@ -398,9 +401,9 @@ public class KPIFilterAndGroupByHandler {
 
 			getTotalLeakageValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 
-			getTotalVoucherValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr, true);
+			getTotalVoucherValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 
-			getTotalVoucherValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr, false);
+			getTotalVoucherREMAININGValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 
 		}
 
@@ -552,15 +555,16 @@ public class KPIFilterAndGroupByHandler {
 
 			getTotalInvoiceValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 
-//			getTotalOrdersIssued(groupByPropName, dir,
-//					argfilter, pgNum, yyyymm,
-//					retMap, true);
-
 			getTotalActiveItems(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 
 			getTotalActivePAs(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 
 			getTotalLeakageValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
+			getTotalVoucherValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
+			getTotalVoucherREMAININGValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
 		}
 
 		logger.debug("FINAL    FINAL   OISS 3 {}", retMap);
@@ -740,9 +744,10 @@ public class KPIFilterAndGroupByHandler {
 
 			getTotalLeakageValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 
-			getTotalVoucherValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr, true);
+			getTotalVoucherValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 
-			getTotalVoucherValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr, false);
+			getTotalVoucherREMAININGValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
 
 		}
 
@@ -942,9 +947,10 @@ public class KPIFilterAndGroupByHandler {
 
 			getTotalLeakageValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 
-			getTotalVoucherValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr, true);
+			getTotalVoucherValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 
-			getTotalVoucherValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr, false);
+			getTotalVoucherREMAININGValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
 
 		}
 
@@ -1305,9 +1311,10 @@ public class KPIFilterAndGroupByHandler {
 
 			getTotalActivePAs(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 			
-			getTotalVoucherValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr, true);
+			getTotalVoucherValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 
-			getTotalVoucherValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr, false);
+			getTotalVoucherREMAININGValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
 
 
 
@@ -1510,7 +1517,7 @@ public class KPIFilterAndGroupByHandler {
 
 	public Map<String, Map<String, Double>> getTotalVoucherValue(String groupByPropName, int dir,
 			Map<String, List<String>> argfilter, int pgNum, List<String> yyyymm,
-			Map<String, Map<String, Double>> retMap, boolean second, String searchStr, boolean isConsumed) {
+			Map<String, Map<String, Double>> retMap, boolean second, String searchStr) {
 
 		String collectionName = Constants.VOUCHER_DETAILS_COLLECTION_NAME;
 
@@ -1598,7 +1605,134 @@ public class KPIFilterAndGroupByHandler {
 		List<String> kpisV = new ArrayList<String>();
 		kpisV.add(Constants.VOUCHER_CONSUMED);
 		kpisV.add(Constants.VOUCHER_REMAINING);
-		String sortByField = isConsumed ? Constants.VOUCHER_CONSUMED : Constants.VOUCHER_REMAINING;
+		String sortByField = Constants.VOUCHER_CONSUMED;
+		common.getResults(pipeline, dir, pgNum, retMap, kpisV, collectionName, sortByField, mongoTemplate);
+
+		if (!second) {
+			getTotalOrdersValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
+			getTotalInvoiceValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
+			getTotalOrdersIssued(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
+			getTotalLeakageValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
+			getTotalActiveItems(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
+			getTotalActivePAs(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+			
+			getTotalVoucherREMAININGValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, second, searchStr);
+
+		}
+
+		logger.debug("FINAL    FINAL   LEAKAGE 3 {}", retMap);
+
+		return retMap;
+	}
+
+
+	public Map<String, Map<String, Double>> getTotalVoucherREMAININGValue(String groupByPropName, int dir,
+			Map<String, List<String>> argfilter, int pgNum, List<String> yyyymm,
+			Map<String, Map<String, Double>> retMap, boolean second, String searchStr) {
+
+		String collectionName = Constants.VOUCHER_DETAILS_COLLECTION_NAME;
+
+		if (retMap == null) {
+			retMap = new LinkedHashMap<String, Map<String, Double>>();
+		}
+
+		if (retMap.size() == 0 && second)
+			return retMap;
+
+		List<Bson> pipeline = new ArrayList<>();
+
+		Map<String, List<String>> filter = null;
+
+		if (argfilter != null) {
+			filter = new HashMap<String, List<String>>();
+			filter.putAll(argfilter);
+		}
+
+		if (filter != null) {
+
+			Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
+			if (bfilterClause != null)
+				pipeline.add(bfilterClause);
+		}
+
+		if (!second && searchStr != null && searchStr.trim().length() != 0) {
+			Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
+			pipeline.add(srchBson);
+		}
+		
+		if (retMap.size() > 0) {
+			pipeline.add(match(in(groupByPropName, retMap.keySet())));
+		}
+
+
+		Bson firstProjectVLBson = BasicDBObject
+				.parse("{$project:{"
+						+ "_id: 0, "
+						+ "ivu:'$invoiceUnitPriceAsPerTc', "
+						+ "poN:'$purchaseOrderNumberOne', "
+						+ "poQ: '$quantityOrderedPurchaseOrder', "
+						+ "net: '$netPricePOPrice', "
+						+ "priceUnitPo: '$priceUnitPo', "
+						+ "idyy : {$dateToString: { format: '%Y-%m', date: '$invoiceDate' }}, "
+						+ "podtyy : {$dateToString: { format: '%Y-%m', date: '$purchaseOrderCreationDate' }},"
+						+ "iddd : {$dateToString: { format: '%Y-%m-%d', date: '$invoiceDate' }}, "
+						+ "podtdd : {$dateToString: { format: '%Y-%m-%d', date: '$purchaseOrderCreationDate' }},"
+						+ "vouch : '$voucherConsumed'"
+						+ "supplierPartNumber: '$supplierPartNumber', "
+						+ "tradingModel: '$tradingModel' , "
+						+ "supplierId: '$supplierId' , " 
+						+ "outlineAgreementNumber: '$outlineAgreementNumber', "
+						+ "catalogueType: '$catalogueType' , " 
+						+ "opcoCode: '$opcoCode', "
+						+ "parentSupplierId: '$parentSupplierId' , " 
+						+ "materialGroupL4: '$materialGroupL4' , "
+						+ "priceAgreementReferenceName: '$priceAgreementReferenceName'," 
+				+ "} }");
+		pipeline.add(firstProjectVLBson);
+
+//		printDocs(collectionName, pipeline);
+
+		// add dateFilters
+		if (yyyymm != null && yyyymm.size() > 0) {
+			Bson dateFilter = match(in("podtyy", yyyymm));
+			pipeline.add(dateFilter);
+		}
+
+//		//now unwind
+		pipeline.add(Aggregates.unwind("$vouch"));
+		int cnt = common.getCount(collectionName, pipeline, mongoTemplate);
+		logger.debug("-->>{}", cnt);
+
+
+//		printDocs(collectionName, pipeline);
+
+
+		
+		//now getminimum
+//		pipeLine.add(Aggregates.unwind("$vouch", new UnwindOptions().preserveNullAndEmptyArrays(true)));
+		pipeline.add(BasicDBObject.parse("{$group:{_id:{"+groupByPropName+": '$"+groupByPropName+"',voucherid: '$vouch.voucherId'}, rem:{'$min':'$vouch.remaining'}}}"));
+
+//		common.printDocs(collectionName, pipeline, mongoTemplate);
+		cnt = common.getCount(collectionName, pipeline, mongoTemplate);
+		logger.debug("-->>{}", cnt);
+
+		
+		Bson secondProjectVLBson = BasicDBObject.parse("{$group:{_id:'$_id."+groupByPropName+"', "+
+		Constants.VOUCHER_REMAINING+":{'$sum':'$rem'}}}");
+		pipeline.add(secondProjectVLBson);
+
+		common.printDocs(collectionName, pipeline, mongoTemplate);
+		cnt = common.getCount(collectionName, pipeline, mongoTemplate);
+		logger.debug("1 -> {}", cnt);
+
+		List<String> kpisV = new ArrayList<String>();
+		kpisV.add(Constants.VOUCHER_REMAINING);
+		String sortByField = Constants.VOUCHER_REMAINING;
 		common.getResults(pipeline, dir, pgNum, retMap, kpisV, collectionName, sortByField, mongoTemplate);
 
 		if (!second) {
@@ -1614,6 +1748,9 @@ public class KPIFilterAndGroupByHandler {
 
 			getTotalActivePAs(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 
+			getTotalVoucherValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
+
 		}
 
 		logger.debug("FINAL    FINAL   LEAKAGE 3 {}", retMap);
@@ -1621,6 +1758,100 @@ public class KPIFilterAndGroupByHandler {
 		return retMap;
 	}
 
+	
+	public int getTotalVoucherREMAINING_COUNT(String groupByPropName,
+			Map<String, List<String>> argfilter, List<String> yyyymm, String searchStr) {
+
+		String collectionName = Constants.VOUCHER_DETAILS_COLLECTION_NAME;
+
+		List<Bson> pipeline = new ArrayList<>();
+
+		Map<String, List<String>> filter = null;
+
+		if (argfilter != null) {
+			filter = new HashMap<String, List<String>>();
+			filter.putAll(argfilter);
+		}
+
+		if (filter != null) {
+
+			Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
+			if (bfilterClause != null)
+				pipeline.add(bfilterClause);
+		}
+
+		if (searchStr != null && searchStr.trim().length() != 0) {
+			Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
+			pipeline.add(srchBson);
+		}
+		
+
+		Bson firstProjectVLBson = BasicDBObject
+				.parse("{$project:{"
+						+ "_id: 0, "
+						+ "ivu:'$invoiceUnitPriceAsPerTc', "
+						+ "poN:'$purchaseOrderNumberOne', "
+						+ "poQ: '$quantityOrderedPurchaseOrder', "
+						+ "net: '$netPricePOPrice', "
+						+ "priceUnitPo: '$priceUnitPo', "
+						+ "idyy : {$dateToString: { format: '%Y-%m', date: '$invoiceDate' }}, "
+						+ "podtyy : {$dateToString: { format: '%Y-%m', date: '$purchaseOrderCreationDate' }},"
+						+ "iddd : {$dateToString: { format: '%Y-%m-%d', date: '$invoiceDate' }}, "
+						+ "podtdd : {$dateToString: { format: '%Y-%m-%d', date: '$purchaseOrderCreationDate' }},"
+						+ "vouch : '$voucherConsumed'"
+						+ "supplierPartNumber: '$supplierPartNumber', "
+						+ "tradingModel: '$tradingModel' , "
+						+ "supplierId: '$supplierId' , " 
+						+ "outlineAgreementNumber: '$outlineAgreementNumber', "
+						+ "catalogueType: '$catalogueType' , " 
+						+ "opcoCode: '$opcoCode', "
+						+ "parentSupplierId: '$parentSupplierId' , " 
+						+ "materialGroupL4: '$materialGroupL4' , "
+						+ "priceAgreementReferenceName: '$priceAgreementReferenceName'," 
+				+ "} }");
+		pipeline.add(firstProjectVLBson);
+
+//		printDocs(collectionName, pipeline);
+
+		// add dateFilters
+		if (yyyymm != null && yyyymm.size() > 0) {
+			Bson dateFilter = match(in("podtyy", yyyymm));
+			pipeline.add(dateFilter);
+		}
+
+//		//now unwind
+		pipeline.add(Aggregates.unwind("$vouch"));
+		int cnt = common.getCount(collectionName, pipeline, mongoTemplate);
+		logger.debug("-->>{}", cnt);
+
+
+//		printDocs(collectionName, pipeline);
+
+
+		
+		//now getminimum
+//		pipeLine.add(Aggregates.unwind("$vouch", new UnwindOptions().preserveNullAndEmptyArrays(true)));
+		pipeline.add(BasicDBObject.parse("{$group:{_id:{"+groupByPropName+": '$"+groupByPropName+"',voucherid: '$vouch.voucherId'}, rem:{'$min':'$vouch.remaining'}}}"));
+
+//		common.printDocs(collectionName, pipeline, mongoTemplate);
+		cnt = common.getCount(collectionName, pipeline, mongoTemplate);
+		logger.debug("-->>{}", cnt);
+
+		
+		Bson secondProjectVLBson = BasicDBObject.parse("{$group:{_id:'$_id."+groupByPropName+"', "+
+		Constants.VOUCHER_REMAINING+":{'$sum':'$rem'}}}");
+		pipeline.add(secondProjectVLBson);
+
+		common.printDocs(collectionName, pipeline, mongoTemplate);
+		cnt = common.getCount(collectionName, pipeline, mongoTemplate);
+		logger.debug("1 -> {}", cnt);
+		
+		return cnt;
+
+	}
+	
+	
+	
 	public int getTotalVoucherItemsCOUNT(String groupByPropName, Map<String, List<String>> argfilter, 
 			List<String> yyyymm, String searchStr) {
 

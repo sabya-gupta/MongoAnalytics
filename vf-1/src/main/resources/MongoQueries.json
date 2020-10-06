@@ -1,0 +1,984 @@
+https://xd.adobe.com/view/15430069-139b-4c92-6df3-36c79e179085-6372/screen/001e8364-2730-4691-add8-a097a0a94768/
+
+db.testDB.aggregate([{$group:{_id:{supplier: '$supp', country:'$cntry'}, totalOV: {$sum:'$ov'}}}, {$sort:{totalOV:-1}} ])
+
+db.testDB.aggregate([{$group:{_id:{$concat:[{$toString:{$year:'$dt'}},'-',{$toString:{$month:'$dt'}}]}, totalOV: {$sum:'$ov'}}}, {$sort:{_id:-1}} ])
+
+
+db.testDB.aggregate([{$group:{_id:{$dateToString: { format: '%Y-%m', date: '$dt' }}, totalOV: {$sum:'$ov'}}}, {$sort:{_id:-1}} ])
+
+db.testDB.aggregate([{$project:{ov:'$ov', dt:{$year:'$dt'}}}, {$match:{'$dt':2000}} ,{$group:{_id:{dt}, totalOV: {$sum:'$ov'}}}, {$sort:{_id:-1}} ])
+
+
+
+db.testDB.aggregate([{$project:{ov:'$ov', dt:{$year:'$dt'}}}])
+db.testDB.aggregate([{$project:{ov:'$ov', dt:{$year:'$dt'}}}, {$match:{dt:2020}}       ])
+
+db.testDB.aggregate([{$project:{ov:'$ov', yr:{$year:'$dt'}, dt:'$dt'}}, {$match:{yr:2020}} ,    {$group:{_id:{date:'$yr'}, totalOV: {$sum:'$ov'}}}       ])
+
+
+
+db.testDB.aggregate([{$project:{ov:'$ov', yr:{$year:'$dt'}, dt:'$dt'}}, {$match:{yr:2020}} ,    {$group:{_id:{$dateToString: { format: '%Y-%m', date: '$dt' }}, totalOV: {$sum:'$ov'}}}, {$sort:{_id:-1}}       ])
+
+
+db.anaInv.aggregate([{$group:{_id:null, totalLeakage:{$sum:'$leakage'}}} ])
+
+
+
+db.priceAgreementSpnDetails.aggregate([{$match{'validToDate': {$gte:ISODate('2018-01-01')}}}]).pretty()
+
+
+
+
+db.priceAgreementSpnDetails.aggregate([{$project:{validToDate:'$validToDate', supplierPartNumber:'$supplierPartNumber'}},       {$match:{'validToDate': {$gte:ISODate('2020-09-02')}}}      ])
+
+db.priceAgreementSpnDetails.aggregate([{$project:{validToDate:'$validToDate', outlineAgreementNumber:'$outlineAgreementNumber'}},         {$match:{'validToDate': {$gte:ISODate('2020-09-02')}}},  {$group:{_id:'$outlineAgreementNumber', cnt:{$sum:1}}},     {$group:{_id: null, sum:{$sum:1}}}    ])
+
+
+db.priceAgreementSpnDetails.aggregate([{$project:{validToDate:'$validToDate', outlineAgreementNumber:'$outlineAgreementNumber'}},         {$match:{'validToDate': {$gte:ISODate('2020-09-02')}}},  {$group:{_id:'$outlineAgreementNumber', cnt:{$sum:1}}},     {$group:{_id: null, sum:{$sum:1}}}    ])
+
+
+db.priceAgreementSpnDetails.aggregate([{$project:{validToDate:'$validToDate', outlineAgreementNumber:'$outlineAgreementNumber'}},         {$match:{'validToDate': {$gte:ISODate('2000-09-02')}}},  {$group:{_id:'$outlineAgreementNumber', cnt:{$sum:1}}},     {$group:{_id: null, sum:{$sum:1}}}    ])
+
+
+db.priceAgreementSpnDetails.aggregate([{$project:{validToDate:'$validToDate', outlineAgreementNumber:'$outlineAgreementNumber'}}]) 
+
+
+db.priceAgreementSpnDetails.aggregate([{$project:{validToDate:'$validToDate', outlineAgreementNumber:'$outlineAgreementNumber', materialGroupL4
+:$materialGroupL4}},         {$match:{'validToDate': {$gte:ISODate('2020-09-02')}}},  {$group:{_id:'$outlineAgreementNumber', cnt:{$sum:1}}}])
+
+
+db.priceAgreementSpnDetails.aggregate([{"$project": {"validToDate": "$validToDate", "outlineAgreementNumber": "$outlineAgreementNumber"}}, {"$match": {"validToDate": {"$gte": {"$date": '2020-09-02'}}}}, {"$group": {"_id": "$outlineAgreementNumber", "cnt": {"$sum": 1}}}, {"$group": {"_id": null, "sum": {"$sum": 1}}}])
+
+
+db.priceAgreementSpnDetails.find({'validToDate': {$gte:ISODate('2000-09-02')}}).count()
+
+
+
+db.priceAgreementSpnDetails.aggregate([{$project:{validToDate:'$validToDate', supplierPartNumber:'$supplierPartNumber', materialGroupL4
+:'$materialGroupL4'}},  {'$group': {'_id': '$supplierPartNumber', 'cnt': {'$sum': 1}}}    ])
+
+
+
+db.priceAgreementSpnDetails.aggregate([{$project:{validToDate:'$validToDate', supplierid:'$supplierid', supplierPartNumber
+:'$supplierPartNumber'}},  {'$group': {'_id': '$supplierid', 'cnt': {'$sum': 1}}}    ])
+
+
+
+
+db.priceAgreementSpnDetails.aggregate([{$project:{validToDate:'$validToDate', supplierid:'$supplierId', supplierPartNumber
+:'$supplierPartNumber'}}, {$match:{'validToDate': {$gte:ISODate('2020-09-02')}}},  {'$group': {'_id': '$supplierid', 'cnt': {'$sum': 1}}}    ])
+
+
+
+db.priceAgreementSpnDetails.aggregate([
+{$project:{validToDate:'$validToDate', outlineAgreementNumber:'$outlineAgreementNumber'}}, 
+{$group:{_id:{vd:'$validToDate', ola:'$outlineAgreementNumber'}, count:{'$sum' : 1}}},
+])
+
+
+db.priceAgreementSpnDetails.aggregate([
+{$project:{validToDate:'$validToDate', outlineAgreementNumber:'$outlineAgreementNumber'}}, 
+{$match:{'validToDate': {
+		$gte:ISODate('2020-09-02'), $lte:ISODate('2020-09-05')}
+		}},
+{$group:{_id:{vd:'$validToDate', ola:'$outlineAgreementNumber'}, count:{'$sum' : 1}}},
+{$project:{aa:'$_id.vd'}},
+{$group:{_id:'$aa', count:{'$sum' : 1}}},
+])
+
+db.priceAgreementSpnDetails.aggregate([
+
+{$project:{validToDate:'$validToDate', outlineAgreementNumber:'$outlineAgreementNumber'}}, 
+
+{$group:{_id:{vd:'$validToDate', ola:'$outlineAgreementNumber'}, count:{'$sum' : 1}}},
+
+{'$sort' : {vd : -1}}
+
+])
+
+
+db.priceAgreementSpnDetails.aggregate([
+{$project:{validToDate:'$validToDate', outlineAgreementNumber:'$outlineAgreementNumber'}},
+
+])
+
+localmarket opcode
+
+L1 - cat type
+
+
+{validFromDate:{$lte:ISODate('2020-09-06')}}
+
+
+SPN+OPCO+purchasingOrgCode
+
+db.priceAgreementSpnDetails.aggregate([
+{$project:{validToDate:'$validToDate', supplierPartNumber:'$supplierPartNumber', opcoCode:'$opcoCode', priceAgreementStatus:'$priceAgreementStatus'}},
+{$match:
+	{
+		'priceAgreementStatus':{$eq:'Inactive'},
+		'validToDate': {$gte:ISODate('2020-09-02'), $lte:ISODate('2020-09-05')}
+	}
+},
+{$group:{_id:{validToDate:'$validToDate', supplierPartNumber:'$supplierPartNumber', opcoCode:'$opcoCode', priceAgreementStatus:'$priceAgreementStatus'}, count:{'$sum' : 1}}},
+{$project:{validToDate:'$_id.validToDate'}}, 
+{$group:{_id:{validToDate: '$validToDate'}, count:{'$sum' : 1}}},
+{$sort:{_id.validToDate:1}}
+])
+
+
+
+
+{priceAgreementStatus:"Active"}
+
+{priceAgreementStatus:"Active", {$or : {validFromDate:{$gte:new ISODate('2015-08-15')}, {validFromDate:{$gte:new ISODate('2015-08-15')}} } } } 
+
+$or:[{validFromDate:{$gte:new ISODate('2015-08-15')}}, {validFromDate:{$gte:new ISODate('2015-08-15')}} ]
+
+$or:{{validFromDate:{$gte:new ISODate('2015-08-15')},  {validFromDate:{$gte:new ISODate('2015-08-15')}   }}
+
+
+
+
+db.priceAgreementSpnDetails.aggregate([
+{$group:{_id: null, mindate:{'$min':'$validFromDate'}}}
+])
+
+
+
+db.dpasd.aggregate([
+	{$match:{'date': {$gte:ISODate('2010-08-04'), $lt:ISODate('2010-08-05')}}},
+	{ $group : {_id: {date:'$date', spn:'$pasd.supplierPartNumber', opco:'$pasd.opcoCode'}, count:{'$sum':1}}},
+	{$project:{thedate:'$_id.date'}},
+	{$group: {_id:'$thedate', count:{'$sum':1}}},
+	{$sort:{_id:-1}}
+])
+
+
+db.dpasd.aggregate([
+	{$match:{'date': {$gte:ISODate('2010-08-04'), $lt:ISODate('2010-08-05')}}},
+	{ $group : {_id: {date:'$date', spn:'$pasd.outlineAgreementNumber'}, count:{'$sum':1}}},
+	{$group: {_id: '$_id.date', uniqueValues: {$addToSet: '$_id.ola'}}},
+])
+
+
+
+
+
+
+db.priceAgreementSpnDetails.aggregate([
+{$match:{priceAgreementStatus:'Active'}},
+])
+
+db.priceAgreementSpnDetails.find({$and[{priceAgreementStatus:'Active'}, {validToDate:{$gte:ISODate('2010-08-04')}}]})
+
+db.priceAgreementSpnDetails.find({priceAgreementStatus:'Active'})
+
+db.priceAgreementSpnDetails.find({validToDate:{$gte:ISODate('2010-08-04')}})
+
+
+db.priceAgreementSpnDetails.find({$and:[
+	{priceAgreementStatus:'InActive'},
+]})
+
+
+db.priceAgreementSpnDetails.find({$and:[
+	{priceAgreementStatus:'Active'},
+	{validFromDate:{$lte:ISODate('2020-09-02')}},
+]})
+
+db.priceAgreementSpnDetails.find({$and:[
+	{priceAgreementStatus:'Active'},
+	{validToDate:{$lte:ISODate('2020-09-02')}}
+]})
+
+
+db.priceAgreementSpnDetails.find({$and:[
+	{priceAgreementStatus:'Active'},
+	{validFromDate:{$gte:ISODate('2020-09-02')}},
+	{validToDate:{$lte:ISODate('2020-09-02')}}
+]})
+
+
+
+db.dpasd.aggregate([
+{$match:{'date': {$gte:ISODate('2020-09-01'), $lte:ISODate('2020-09-05')}}},
+{$group:{_id:{date:'$date', ola:'$pasd.outlineAgreementNumber'}, count:{$sum:1}}},
+{$project: {date:'$_id.date', ola:'$_id.ola'}}
+])
+
+
+
+db.priceAgreementSpnDetails.aggregate([
+{$group:{_id:'$supplierPartNumber', count:{$sum:1}}},
+{$group:{_id:null, count:{$sum:1}}}
+])
+
+db.purchaseOrderInvoiceData.aggregate([
+	{$project:
+		{
+			purchaseOrderNumber:'$purchaseOrderNumberOne', 
+			quantityOrderedPurchaseOrder: {$toDouble:'$quantityOrderedPurchaseOrder'},
+			netPricePOPrice: {$toDouble:'$netPricePOPrice'},
+			priceUnitPo: {$toDouble:'$priceUnitPo'},
+		}
+	},
+	
+])
+
+
+
+db.purchaseOrderInvoiceData.aggregate([
+	{$project:{quantityOrderedPurchaseOrder: {$toDouble:'$quantityOrderedPurchaseOrder'}, netPricePOPrice: {$toDouble:'$netPricePOPrice'}, priceUnitPo: {$toDouble:'$priceUnitPo'}, supplierName:'$supplierName'} },
+	
+	{ $project: { supplierName:'$supplierName', value:{$multiply:[{$divide:['$netPricePOPrice', '$priceUnitPo']}, '$quantityOrderedPurchaseOrder']} } },
+	{$group:{_id:'$supplierName', total:{$sum:'$value'}}}
+])
+
+
+
+
+db.purchaseOrderInvoiceData.aggregate([	
+	{
+		$match:
+		{
+			$and:
+			[
+				{purchaseOrderCreationDate:{$gte:ISODate('2019-06-01')}},
+				{purchaseOrderCreationDate:{$lte:ISODate('2019-06-10')}}
+			]
+		}
+	
+	},
+])
+
+
+	{$project:{purchaseOrderCreationDate:'$purchaseOrderCreationDate', quantityOrderedPurchaseOrder: '$quantityOrderedPurchaseOrder', netPricePOPrice: '$netPricePOPrice', priceUnitPo: '$priceUnitPo'} },
+
+
+db.purchaseOrderInvoiceData.aggregate([	
+	{
+		$match:
+		{
+			$and:
+			[
+				{purchaseOrderCreationDate:{$gte:ISODate('2019-06-01')}},
+				{purchaseOrderCreationDate:{$lte:ISODate('2019-06-10')}}
+			]
+		}
+	
+	},
+	
+	
+	
+	
+	{$project:{purchaseOrderCreationDate:{$dateToString: { format: '%Y-%m', date: ''$purchaseOrderCreationDate'' }}, quantityOrderedPurchaseOrder: '$quantityOrderedPurchaseOrder', netPricePOPrice: '$netPricePOPrice', priceUnitPo: '$priceUnitPo'} },
+	
+	{ $project: { purchaseOrderCreationDate:'$purchaseOrderCreationDate', value:{$multiply:[{$divide:['$netPricePOPrice', '$priceUnitPo']}, '$quantityOrderedPurchaseOrder']} } },	
+	
+	{$group:{_id:'$purchaseOrderCreationDate', total:{$sum:'$value'}}}
+	
+])
+
+			purchaseOrderCreationDate:{$dateToString: { format: '%Y-%m', date: ''$purchaseOrderCreationDate'' }},
+
+
+db.purchaseOrderInvoiceData.aggregate([	
+	
+		{
+		$match:
+		{
+			$and:
+			[
+				{purchaseOrderCreationDate:{$gte:ISODate('2019-06-01')}},
+				{purchaseOrderCreationDate:{$lte:ISODate('2019-06-10')}}
+			]
+		}
+	
+	},
+
+	{
+		$project:
+		{
+			purchaseOrderCreationDate:{$dateToString: { format: '%Y-%m-%d', date: '$purchaseOrderCreationDate' }},
+			quantityOrderedPurchaseOrder: '$quantityOrderedPurchaseOrder', 
+			netPricePOPrice: '$netPricePOPrice', 
+			priceUnitPo: '$priceUnitPo'
+		}
+	},
+	{ $project: { purchaseOrderCreationDate:'$purchaseOrderCreationDate', value:{$multiply:[{$divide:['$netPricePOPrice', '$priceUnitPo']}, '$quantityOrderedPurchaseOrder']} } },	
+	{$group:{_id:'$purchaseOrderCreationDate', total:{$sum:'$value'}}},
+
+	{$sort:{_id:1}},
+])
+
+
+
+{$and:[{validFromDate:{$lte:ISODate('2020-09-02')}}, {validToDate:{$gte:ISODate('2020-09-02')}}]}
+
+
+
+
+{$and:[{validFromDate:{$lte:ISODate('2020-09-02')}}, {validToDate:{$gte:ISODate('2020-09-02')}}, {priceAgreementStatus:'Active'}]}
+
+
+
+
+
+
+
+
+
+db.purchaseOrderInvoiceData.aggregate([	
+	
+	{ $project: {
+		supplierName: '$supplierName', 
+		valueOV:{$multiply:[{$divide:['$netPricePOPrice', '$priceUnitPo']}, '$quantityOrderedPurchaseOrder']},
+		valueIV:{$multiply:[{$divide:['$invoiceUnitPriceAsPerTc', '$priceUnitPo']}, '$invoiceQuantity']},
+		po:'$purchaseOrderNumberOne',
+		
+	} },	
+	{$group:{_id:'$supplierName', totalOV:{$sum:'$valueOV'},  totalIV:{$sum:'$valueIV'}, totalPO:{$sum:1}  }},
+
+])
+
+db.purchaseOrderInvoiceData.aggregate([	
+	
+	{ $project: {
+		supplierName: '$supplierName', 
+		valueOV:{$multiply:[{$divide:['$netPricePOPrice', '$priceUnitPo']}, '$quantityOrderedPurchaseOrder']},
+		valueIV:{$multiply:[{$divide:['$invoiceUnitPriceAsPerTc', '$priceUnitPo']}, '$invoiceQuantity']},
+		
+	} },	
+	{$group:{_id:null, totalOV:{$sum:'$valueOV'},  totalIV:{$sum:'$valueIV'}  }},
+
+])
+
+db.purchaseOrderInvoiceData.aggregate([	
+	
+	{ $project: {
+		supplierName: '$supplierName', 
+		po:'$purchaseOrderNumberOne',
+	} },	
+	{$group:{_id:'$supplierName',  totalOI:{$sum:1} }},
+
+])
+
+
+
+db.priceAgreementSpnDetails.aggregate([
+	{$match:{priceAgreementStatus:'Active'}},
+
+	{$group:{_id:{parentSupplierId:'$parentSupplierId', supplierPartNumber:'$supplierPartNumber', opcoCode:'$opcoCode'}, count:{$sum:1}}},
+	
+	{$group:{_id:'$_id.parentSupplierId', count:{$sum:1}}}
+])
+
+db.purchaseOrderInvoiceData.aggregate(
+[
+	{$group: {_id: {dim:'$parentSupplierName', po:'$purchaseOrderNumberOne'}, count:{$sum:1} }},
+	{$group: {_id: {dim:'$_id.dim'}, count:{$sum:1} }}
+]
+)
+
+materialGroupL4
+
+db.priceAgreementSpnDetails.aggregate([
+{$match:{priceAgreementStatus:'Active'}},
+{$group:{_id:{dim:'$tradingModel', spn:'$supplierPartNumber', opco:'$opcoCode'}, count:{$sum:1}}},
+{$group: {_id:'$_id.dim', count:{$sum:1}}}
+])
+
+db.priceAgreementSpnDetails.aggregate([
+{$match:{priceAgreementStatus:'Active'}},
+{$group:{_id:{spn:'$supplierPartNumber', opco:'$opcoCode'}, count:{$sum:1}}},
+{$group: {_id:null, count:{$sum:1}}}
+])
+
+db.priceAgreementSpnDetails.aggregate([
+{$match:{priceAgreementStatus:'Active'}},
+{$group:{_id:{dim:'$supplierId', spn:'$supplierPartNumber'}, count:{$sum:1}}},
+{$group: {_id:'$_id.dim', count:{$sum:1}}}
+])
+
+
+{$match:{priceAgreementStatus:'Active'}}
+
+
+
+
+db.purchaseOrderInvoiceData.aggregate(
+[
+	{$match: {$and:[    {purchaseOrderCreationDate:{$gte:ISODate('2019-09-14')}}, {purchaseOrderCreationDate:{$lte:ISODate('2020-09-14')}}  ]}},
+	{$project:{spn:'$supplierPartNumber', podate:{$dateToString: { format: '%Y-%m', date: '$purchaseOrderCreationDate' }}, value:{$multiply:[{$divide:['$netPricePOPrice', '$priceUnitPo']}, '$quantityOrderedPurchaseOrder']}   }},
+	{$group:{_id:'$podate', value:{$sum:'$value'}}}
+]
+)
+
+
+
+db.purchaseOrderInvoiceData.aggregate(
+[
+	{$match: {$and:[    {purchaseOrderCreationDate:{$gte:ISODate('2019-09-14')}}, {purchaseOrderCreationDate:{$lte:ISODate('2020-09-14')}}  ]}},
+	{$project:{spn:'$supplierPartNumber', podate:{$dateToString: { format: '%Y-%m', date: '$purchaseOrderCreationDate' }}, value:{$multiply:[{$divide:['$netPricePOPrice', '$priceUnitPo']}, '$quantityOrderedPurchaseOrder']}   }},
+	{$group:{_id:'$podate', value:{$sum:'$value'}}},
+	{$sort:{_id:-1}},
+	{$skip:2},
+	{$limit:2},
+	
+]
+)
+
+
+
+
+
+db.purchaseOrderInvoiceData.aggregate(
+[
+	{$project:{invoiceNumber:'$invoiceNumber', invoiceQuantity: '$invoiceQuantity', invoiceUnitPriceAsPerTc: '$invoiceUnitPriceAsPerTc', priceUnitPo: '$priceUnitPo' } }
+	
+]
+)
+
+
+
+
+db.purchaseOrderInvoiceData.aggregate(
+[
+	{$project:{dimName:'$dimName+', invoiceQuantity: '$invoiceQuantity', invoiceUnitPriceAsPerTc: '$invoiceUnitPriceAsPerTc',  priceUnitPo: '$priceUnitPo', } }
+	
+]
+)
+
+
+
+db.purchaseOrderInvoiceData.aggregate([
+{
+   $lookup:
+     {
+		from: 'priceAgreementSpnDetails' ,
+		localField: 'supplierPartNumber',
+		foreignField: 'supplierPartNumber',
+		as: 'combi'
+     }
+},
+{$unwind: '$combi'}
+]).pretty()
+
+
+
+
+
+db.priceAgreementSpnDetails.aggregate(
+[
+{
+   $lookup:
+     {
+		from: 'purchaseOrderInvoiceData' ,
+		localField: 'supplierPartNumber',
+		foreignField: 'supplierPartNumber',
+		as: 'combi'
+     }
+	 
+},
+{$unwind: '$combi'},
+{$project:{
+		_id: 0, 
+		supplierPartNumber:1, 
+		tradingModel:1,
+		supplierId: 1,
+		outlineAgreementNumber: 1,
+		catalogueType:1,
+		opcoCode:1,
+		priceAgreementStatus:1,
+		parentSupplierId:1,
+		validFromDate:1,
+		validToDate:1,
+		materialGroupL4:1,
+		priceAgreementReferenceName:1,
+		purchaseOrderCreationDate:'$combi.purchaseOrderCreationDate',
+		invoiceDate:'$combi.invoiceDate',
+		ov:{$multiply:[{$divide:['$combi.netPricePOPrice', '$combi.priceUnitPo']}, '$combi.quantityOrderedPurchaseOrder']},
+		iv:{$multiply:[{$divide:['$combi.invoiceUnitPriceAsPerTc', '$combi.priceUnitPo']}, '$combi.invoiceQuantity']}
+	}
+},
+{$out:'combinedCollection'}
+]
+)
+
+
+
+db.collA.aggregate(
+[
+{
+   $lookup:
+     {
+		from: 'collB' ,
+		localField: 'id',
+		foreignField: 'id',
+		as: 'combi'
+     }
+	 
+},
+{ $unwind: { path: '$combi', preserveNullAndEmptyArrays: true } },
+{$project:{_id:0, val:'$combi.val', id:'$id'} },
+{$out:'collC'}
+]
+)
+
+
+
+
+
+
+db.priceAgreementSpnDetails.aggregate(
+[
+{
+   $lookup:
+     {
+		from: 'purchaseOrderInvoiceData' ,
+		localField: 'supplierPartNumber',
+		foreignField: 'supplierPartNumber',
+		as: 'combi',
+     }	 
+},
+{ $unwind: { path: '$combi', preserveNullAndEmptyArrays: true } },
+{$project:
+	{
+		_id: 0, 
+		supplierPartNumber:1, 
+		tradingModel:1,
+		supplierId: 1,
+		outlineAgreementNumber: 1,
+		catalogueType:1,
+		opcoCode:1,
+		priceAgreementStatus:1,
+		parentSupplierId:1,
+		validFromDate:1,
+		validToDate:1,
+		materialGroupL4:1,
+		priceAgreementReferenceName:1,
+		purchaseOrderCreationDate:'$combi.purchaseOrderCreationDate',
+		invoiceDate:'$combi.invoiceDate',
+		ov:{$multiply:[{$divide:['$combi.netPricePOPrice', '$combi.priceUnitPo']}, '$combi.quantityOrderedPurchaseOrder']},
+		iv:{$multiply:[{$divide:['$combi.invoiceUnitPriceAsPerTc', '$combi.priceUnitPo']}, '$combi.invoiceQuantity']}
+	}
+},
+{$out:'combinedCollection'}
+]
+)
+
+db.purchaseOrderInvoiceData.createIndex({supplierPartNumber:1})
+ db.priceAgreementSpnDetails.createIndex({supplierPartNumber:1})
+ 
+ db.priceAgreementSpnDetails.distinct('supplierPartNumber').length;
+ db.purchaseOrderInvoiceData.distinct('supplierPartNumber').length;
+ 
+db.priceAgreementSpnDetails.aggregate([
+//{$match:{$and:[{priceAgreementStatus:{$eq:'Active'}}, {materialGroupL4:{$in:['K208']}}                         ]}},
+
+{$match:{$and:[{materialGroupL4 : { $in: ['K208', 'K209']}} , {priceAgreementStatus : { $in: ['Active']}}]}},
+
+{$project:{
+		dim: '$supplierPartNumber', 
+		spn:'$supplierPartNumber', 
+		oc:'$opcoCode', 
+		}
+},
+{$group:{_id:'$dim', val:{$sum:1}}},
+{skip(10)},
+{limit(5)},
+])
+
+
+db.purchaseOrderInvoiceData.aggregate
+([
+{$match: {$and: [{materialGroupL4: {$in: ['K208', 'K209']}}]}}, 
+{$project: {dim: '$parentSupplierId', po: {$multiply: [{$divide: ['$netPricePOPrice', '$priceUnitPo']}, '$quantityOrderedPurchaseOrder']}, iv: {$multiply: [{$divide: ['$invoiceUnitPriceAsPerTc', '$priceUnitPo']}, '$invoiceQuantity']}}}, 
+//{"$group": {"_id": "$_id.dim", "ORDER_VALUE": {"$sum": "$po"}, "INVOICE_VALUE": {"$sum": "$iv"}}}, {"$sort": {"val": 1}}, {"$skip": 0}, {"$limit": 5}
+])
+
+
+db.purchaseOrderInvoiceData.aggregate(
+[
+{$match: {$and: [
+					{{$dateToString: { format: '%Y-%m', date: '$dt' }}}: {$in : ['2020-09']}} 
+				]}}, 
+				
+{$project: {
+		dim: '$parentSupplierId', 
+		po: {$multiply: [{$divide: ['$netPricePOPrice', '$priceUnitPo']}, '$quantityOrderedPurchaseOrder']}, 
+		iv: {$multiply: [{$divide: ['$invoiceUnitPriceAsPerTc', '$priceUnitPo']}, '$invoiceQuantity']}
+	}
+}, 
+
+]
+)
+
+
+db.purchaseOrderInvoiceData.aggregate(
+[
+	{$project:{
+	invoiceDateyymm : {$dateToString: { format: '%Y-%m', date: '$invoiceDate' }},
+	purchaseOrderCreationDateyymm : {$dateToString: { format: '%Y-%m', date: '$purchaseOrderCreationDate' }},
+	netPricePOPrice:1,
+	quantityOrderedPurchaseOrder:1,
+	invoiceUnitPriceAsPerTc:1,
+	priceUnitPo:1,
+	parentSupplierId:1,
+	invoiceQuantity:1
+	}},
+	
+	{$project: {
+		dim: '$parentSupplierId', 
+		po: {$multiply: [{$divide: ['$netPricePOPrice', '$priceUnitPo']}, '$quantityOrderedPurchaseOrder']}, 
+		iv: {$multiply: [{$divide: ['$invoiceUnitPriceAsPerTc', '$priceUnitPo']}, '$invoiceQuantity']}
+	}
+}, 
+{$group:{_id: '$dim' , OV:{$sum:'$po'}, iv:{$sum:'$iv'} }}
+]
+)
+
+
+
+db.priceAgreementSpnDetails.aggregate(
+[
+{$project: 
+	{
+	supplierPartNumber: 1, 
+	tradingModel: 1, 
+	supplierId: 1, 
+	outlineAgreementNumber: 1, 
+	catalogueType: 1, 
+	opcoCode: 1, 
+	priceAgreementStatus: 1, 
+	parentSupplierId: 1, 
+	validFromDate: 1, 
+	validToDate: 1, 
+	materialGroupL4: 1, 
+	priceAgreementReferenceName: 1, 
+	quantityOrderedPurchaseOrder: 1, 
+	priceUnitPo: 1, 
+	netPricePOPrice: 1, 
+	invoiceUnitPriceAsPerTc: 1, 
+	invoiceQuantity: 1, 
+	invoiceDate: 1, 
+	purchaseOrderCreationDate: 1, 
+	validFromDatemm: {$dateToString: {format: '%Y-%m', date: '$validFromDate'}}, 
+	validToDateyymm: {$dateToString: {format: '%Y-%m', date: '$validToDate'}}
+	}
+}
+]
+)
+
+{$project:{supplierPartNumber: 1, tradingModel: 1, supplierId: 1, 
+	outlineAgreementNumber: 1, 
+	catalogueType: 1, 
+	opcoCode: 1, 
+	priceAgreementStatus: 1, 
+	parentSupplierId: 1, 
+	validFromDate: 1, 
+	validToDate: 1, 
+	materialGroupL4: 1, 
+	priceAgreementReferenceName: 1, 
+	quantityOrderedPurchaseOrder: 1, 
+	priceUnitPo: 1, 
+	netPricePOPrice: 1, 
+	invoiceUnitPriceAsPerTc: 1, 
+	invoiceQuantity: 1, 
+	invoiceDate: 1, 
+	purchaseOrderCreationDate: 1, 
+	validFromDatemm: {$dateToString: {format: '%Y-%m', date: '$validFromDate'}}, 
+	validToDateyymm: {$dateToString: {format: '%Y-%m', date: '$validToDate'}}
+	}
+
+	
+	
+db.priceAgreementSpnDetails.aggregate(
+[
+{$group:{_id:{dim: '$parentSupplierId', po:'$purchaseOrderNumberOne' }, ORDERS_ISSUED:{$sum:1} }},
+{$group:{_id: '$dim' , ORDERS_ISSUED:{$sum:1}}} 
+])
+
+
+db.arrexp.aggregate(
+[
+	{ $unwind: '$vl' }
+])
+
+
+db.purchaseOrderInvoiceData.aggregate(
+[
+{$project:{parentSupplierName:1}},
+{$match: { parentSupplierName : {$regex:'oracle', $options: 'i'} }}
+]
+)
+
+
+{$match: {$and:
+	[
+		{parentSupplierId :{$in:['11796860']}}, 
+	]
+	}
+},
+
+{$and:[{purchaseOrderCreationDate :{$gte:ISODate('2020-09-01')}}, {purchaseOrderCreationDate :{$lte:ISODate('2020-09-26')}}]}
+
+
+db.purchaseOrderInvoiceData.aggregate(
+[
+{$match:
+{$and:[{purchaseOrderCreationDate :{$gte:ISODate('2020-09-01')}}, {purchaseOrderCreationDate :{$lte:ISODate('2020-09-26')}}]}
+},
+
+
+{$match: 
+	{$and:[{parentSupplierId :{$in:['11796860']}}]}
+}
+
+]
+)
+
+
+
+
+
+db.purchaseOrderInvoiceData.aggregate(
+[
+
+{$match:
+{$and:[{purchaseOrderCreationDate :{$gte:ISODate('2020-09-01')}}, {purchaseOrderCreationDate :{$lte:ISODate('2020-09-26')}}]}},
+{$match: 
+	{$and:[{parentSupplierId :{$in:['11796860']}}]}
+},
+
+{$match: 
+	{$and:[{materialGroupL4 :{$in:['A213', 'A212']}}]}
+}
+
+]
+).pretty()
+
+
+
+
+
+db.arrexp.aggregate(
+[
+{ $unwind: { path: '$vl', preserveNullAndEmptyArrays: true } },
+{$project: {dicid:1, yyyymm: {$dateToString: { format: '%Y-%m', date: '$vl.trdate' }}, val: '$vl.val'}},
+{$group:{_id: '$yyyymm', val:{'$sum':'$val'}}},
+{$sort:{_id:1}}
+]
+)
+
+
+
+db.arrexp.aggregate(
+[
+{$project: {dicid:1, vl: {$slice:['$vl', -1]}}},
+{$unwind: { path: '$vl', preserveNullAndEmptyArrays: true } },
+{$project: {dicid:1, yyyymm: {$dateToString: { format: '%Y-%m', date: '$vl.trdate' }}, val: '$vl.val'}},
+{$group:{_id: '$yyyymm', val:{'$sum':'$val'}}},
+{$sort:{_id:1}}
+]
+)
+
+
+
+
+
+db.leakage.insertMany(
+[
+
+{ "_id" : ObjectId("5f732760701a7f05fbc56fe0"), "tradingModel" : "Buy From", "priceAgreementReferenceName" : "VPC_BF_NW_ER_LU56_NSI_MULT_400002261_3617D8298DB5", "supplierId" : "0400002261", "supplierName" : "ERICSSON", "opcoCode" : "LU07", "outlineAgreementNumber" : "1250042135", "supplierPartNumber" : "BE5ADF3E09A54136AFBCF3CFE1004118", "purchaseOrderNumberOne" : "4355DD2CA1AA4F9B9BA394570BE09428", "purchaseOrderCreationDate" : ISODate("2021-09-27T20:00:00Z"), "quantityOrderedPurchaseOrder" : 248, "priceReference" : "Purchase Order Date", "invoiceDate" : ISODate("2019-12-30T20:00:00Z"), "invoiceNumber" : "CF5ED35C760C4DC09254F3F5F3404857", "invoiceQuantity" : 33.96, "netPricePOPrice" : 90.3, "invoiceUnitPriceAsPerTc" : 79.8, "priceUnitPo" : 15.82, "priceMechanish" : "PriceErosion", "categoryManager" : "25791C5B8E6E48E8A1EA917E8E55BCAD", "valueLeakages" : [ { "leakageValue" : -19480.95111111111, "calculationDate" : ISODate("2020-09-29T12:24:00.354Z") } ], "reportPeriod" : ISODate("2020-08-31T20:00:00Z"), "_class" : "com.vodafone.price.manager.analytics.model.ValueLeakageInvoicePurchaseOrder" },
+{ "_id" : ObjectId("5f73279c701a7f05fbc56ff9"), "tradingModel" : "Buy From", "priceAgreementReferenceName" : "VPC_BF_IT&E_OR_LU82_SWR_MULT_400017770_1C78F29BB116", "supplierId" : "0400017770", "supplierName" : "ORACLE CORPORATION", "opcoCode" : "LU07", "outlineAgreementNumber" : "1250027392", "supplierPartNumber" : "A1D66BFFEF7D413E91FC39BE16890119", "purchaseOrderNumberOne" : "AC8CBAD507964A0BA9D6D9F204BCE6B0", "purchaseOrderCreationDate" : ISODate("2021-05-30T20:00:00Z"), "quantityOrderedPurchaseOrder" : 110, "priceReference" : "Purchase Order Date", "invoiceDate" : ISODate("2017-11-02T20:00:00Z"), "invoiceNumber" : "D98AD6B4BD244E1EA36673470145F3B4", "invoiceQuantity" : 90.67, "netPricePOPrice" : 68.67, "invoiceUnitPriceAsPerTc" : 24.18, "priceUnitPo" : 77.79, "priceMechanish" : "VolumeCommitment", "categoryManager" : "BAE24650F07449D4AC6B37B8A4B2617C", "valueLeakages" : [ { "leakageValue" : -12542.75, "calculationDate" : ISODate("2020-09-29T12:25:00.631Z"), "finalPriceWithQuantityAsPerSpnPa" : 20096.45, "unitPriceAsPerInvoicePo" : 68.67, "vlCalculatedQuantity" : 110, "adjustedPrevValueLeakage" : 0 } ], "reportPeriod" : ISODate("2020-08-31T20:00:00Z"), "_class" : "com.vodafone.price.manager.analytics.model.ValueLeakageInvoicePurchaseOrder" },
+{ "_id" : ObjectId("5f73279e701a7f05fbc56ffb"), "tradingModel" : "Buy From", "priceAgreementReferenceName" : "VPC_BF_IT&E_OR_LU82_SWR_MULT_400017770_1C78F29BB116", "supplierId" : "0400017770", "supplierName" : "ORACLE CORPORATION", "opcoCode" : "LU07", "outlineAgreementNumber" : "1250027392", "supplierPartNumber" : "25FF4D9972CB4FD5B9CA5216E4C3BFCD", "purchaseOrderNumberOne" : "183A7C32A78C4F18B403E4021CDFE634", "purchaseOrderCreationDate" : ISODate("2017-01-13T20:00:00Z"), "quantityOrderedPurchaseOrder" : 113, "priceReference" : "Purchase Order Date", "invoiceDate" : ISODate("2018-01-25T20:00:00Z"), "invoiceNumber" : "87336940DB9C4CD2993DB4919E110CD3", "invoiceQuantity" : 14.39, "netPricePOPrice" : 16.55, "invoiceUnitPriceAsPerTc" : 27.63, "priceUnitPo" : 26.1, "priceMechanish" : "VolumeDiscount", "categoryManager" : "BAE24650F07449D4AC6B37B8A4B2617C", "valueLeakages" : [ { "leakageValue" : -7373.024000000001, "calculationDate" : ISODate("2020-09-29T12:25:02.475Z"), "finalPriceWithQuantityAsPerSpnPa" : 9243.174, "unitPriceAsPerInvoicePo" : 16.55, "vlCalculatedQuantity" : 113 } ], "reportPeriod" : ISODate("2020-08-31T20:00:00Z"), "_class" : "com.vodafone.price.manager.analytics.model.ValueLeakageInvoicePurchaseOrder" },
+{ "_id" : ObjectId("5f73279f701a7f05fbc56ffd"), "tradingModel" : "Buy From", "priceAgreementReferenceName" : "VPC_BF_IT&E_OR_LU82_SWR_MULT_400017770_1C78F29BB116", "supplierId" : "0400017770", "supplierName" : "ORACLE CORPORATION", "opcoCode" : "LU07", "outlineAgreementNumber" : "1250027392", "supplierPartNumber" : "39B1BC8D806D4680886F8255AE88B2EA", "purchaseOrderNumberOne" : "B962CE348CDE4115A23DA8C485F8D3A9", "purchaseOrderCreationDate" : ISODate("2019-09-20T20:00:00Z"), "quantityOrderedPurchaseOrder" : 6, "priceReference" : "Purchase Order Date", "invoiceDate" : ISODate("2024-02-20T20:00:00Z"), "invoiceNumber" : "5E8599BD1B564D1D968DF6340A899D40", "invoiceQuantity" : 40.58, "netPricePOPrice" : 26.49, "invoiceUnitPriceAsPerTc" : 87.7, "priceUnitPo" : 53.43, "priceMechanish" : "VolumeCommitment", "categoryManager" : "BAE24650F07449D4AC6B37B8A4B2617C", "valueLeakages" : [ { "leakageValue" : -63.57599999999999, "calculationDate" : ISODate("2020-09-29T12:25:03.536Z"), "finalPriceWithQuantityAsPerSpnPa" : 222.516, "unitPriceAsPerInvoicePo" : 26.49, "vlCalculatedQuantity" : 6, "adjustedPrevValueLeakage" : 0 } ], "reportPeriod" : ISODate("2020-08-31T20:00:00Z"), "_class" : "com.vodafone.price.manager.analytics.model.ValueLeakageInvoicePurchaseOrder" },
+{ "_id" : ObjectId("5f7327a0701a7f05fbc56fff"), "tradingModel" : "Buy From", "priceAgreementReferenceName" : "VPC_BF_IT&E_OR_LU82_SWR_MULT_400017770_1C78F29BB116", "supplierId" : "0400017770", "supplierName" : "ORACLE CORPORATION", "opcoCode" : "LU07", "outlineAgreementNumber" : "1250027392", "supplierPartNumber" : "C210A10DC6ED4F83961F93C7AAF9C999", "purchaseOrderNumberOne" : "20939146DECC49EEADD27DF8D5065827", "purchaseOrderCreationDate" : ISODate("2018-01-02T20:00:00Z"), "quantityOrderedPurchaseOrder" : 183, "priceReference" : "Purchase Order Date", "invoiceDate" : ISODate("2020-03-22T20:00:00Z"), "invoiceNumber" : "B2F8384594D14604B367227111E95125", "invoiceQuantity" : 14.36, "netPricePOPrice" : 55.26, "invoiceUnitPriceAsPerTc" : 88.42, "priceUnitPo" : 7.54, "priceMechanish" : "VolumeCommitment", "categoryManager" : "BAE24650F07449D4AC6B37B8A4B2617C", "valueLeakages" : [ { "leakageValue" : -166831.95, "calculationDate" : ISODate("2020-09-29T12:25:04.775Z"), "finalPriceWithQuantityAsPerSpnPa" : 167285.79, "unitPriceAsPerInvoicePo" : 2.4799999999999978, "vlCalculatedQuantity" : 183, "adjustedPrevValueLeakage" : 0 } ], "reportPeriod" : ISODate("2020-08-31T20:00:00Z"), "_class" : "com.vodafone.price.manager.analytics.model.ValueLeakageInvoicePurchaseOrder" },
+{ "_id" : ObjectId("5f7327a1701a7f05fbc57001"), "tradingModel" : "Buy From", "priceAgreementReferenceName" : "VPC_BF_IT&E_OR_LU82_SWR_MULT_400017770_1C78F29BB116", "supplierId" : "0400017770", "supplierName" : "ORACLE CORPORATION", "opcoCode" : "LU07", "outlineAgreementNumber" : "1250027392", "supplierPartNumber" : "3918D371EC8B4A9FB9113D89B466C55E", "purchaseOrderNumberOne" : "53F440400F1442A480553DB8F83DCF89", "purchaseOrderCreationDate" : ISODate("2024-03-07T20:00:00Z"), "quantityOrderedPurchaseOrder" : 1, "priceReference" : "Purchase Order Date", "invoiceDate" : ISODate("2020-05-11T20:00:00Z"), "invoiceNumber" : "579244B131C24DFB9AA2D946205DABB7", "invoiceQuantity" : 23.61, "netPricePOPrice" : 35.75, "invoiceUnitPriceAsPerTc" : 66.25, "priceUnitPo" : 75.41, "priceMechanish" : "VolumeCommitment", "categoryManager" : "BAE24650F07449D4AC6B37B8A4B2617C", "valueLeakages" : [ { "leakageValue" : -85.16600000000001, "calculationDate" : ISODate("2020-09-29T12:25:05.599Z"), "finalPriceWithQuantityAsPerSpnPa" : 120.91600000000001, "unitPriceAsPerInvoicePo" : 35.75, "vlCalculatedQuantity" : 1, "adjustedPrevValueLeakage" : 0 } ], "reportPeriod" : ISODate("2020-08-31T20:00:00Z"), "_class" : "com.vodafone.price.manager.analytics.model.ValueLeakageInvoicePurchaseOrder" },
+{ "_id" : ObjectId("5f732850701a7f05fbc57074"), "tradingModel" : "Buy From", "priceAgreementReferenceName" : "VPC_BF_NW_OR_LU54_CNW_MULT_400017770_3C2F6FD63DCC", "supplierId" : "0400017770", "supplierName" : "ORACLE CORPORATION", "opcoCode" : "LU07", "outlineAgreementNumber" : "1250030828", "supplierPartNumber" : "92CE5C0F0A1744CFBE86EECF01DE30E4", "purchaseOrderNumberOne" : "68986E0DB5AF499FB7FE4EF64F5B7658", "purchaseOrderCreationDate" : ISODate("2021-07-22T20:00:00Z"), "quantityOrderedPurchaseOrder" : 259, "priceReference" : "Purchase Order Date", "invoiceDate" : ISODate("2021-09-01T20:00:00Z"), "invoiceNumber" : "FA53A1147C0B41DEB650EF6CA6BD4D29", "invoiceQuantity" : 4.76, "netPricePOPrice" : 89.9, "invoiceUnitPriceAsPerTc" : 58.53, "priceUnitPo" : 26.75, "priceMechanish" : "VolumeDiscount", "categoryManager" : "8BA852EDD867433699A31730AB3C01B8", "valueLeakages" : [ { "leakageValue" : -46713.24, "calculationDate" : ISODate("2020-09-29T12:28:00.547Z"), "finalPriceWithQuantityAsPerSpnPa" : 49212.59, "unitPriceAsPerInvoicePo" : 9.650000000000006, "vlCalculatedQuantity" : 259 } ], "reportPeriod" : ISODate("2020-08-31T20:00:00Z"), "_class" : "com.vodafone.price.manager.analytics.model.ValueLeakageInvoicePurchaseOrder" },
+{ "_id" : ObjectId("5f732851701a7f05fbc57076"), "tradingModel" : "Buy From", "priceAgreementReferenceName" : "VPC_BF_NW_OR_LU54_CNW_MULT_400017770_3C2F6FD63DCC", "supplierId" : "0400017770", "supplierName" : "ORACLE CORPORATION", "opcoCode" : "LU07", "outlineAgreementNumber" : "1250030828", "supplierPartNumber" : "61D59D169D7F46D49D44E02174569488", "purchaseOrderNumberOne" : "8187C0E8893C40F18C6E46EB823097D1", "purchaseOrderCreationDate" : ISODate("2024-08-15T20:00:00Z"), "quantityOrderedPurchaseOrder" : 299, "priceReference" : "Purchase Order Date", "invoiceDate" : ISODate("2020-10-07T20:00:00Z"), "invoiceNumber" : "45C66A7FF2644BD6A2A2C810BC71A7BC", "invoiceQuantity" : 62.74, "netPricePOPrice" : 2.33, "invoiceUnitPriceAsPerTc" : 72.51, "priceUnitPo" : 39.1, "priceMechanish" : "VolumeCommitment", "categoryManager" : "8BA852EDD867433699A31730AB3C01B8", "valueLeakages" : [ { "leakageValue" : -23347.415, "calculationDate" : ISODate("2020-09-29T12:28:01.388Z"), "finalPriceWithQuantityAsPerSpnPa" : 24044.085000000003, "unitPriceAsPerInvoicePo" : 2.33, "vlCalculatedQuantity" : 299, "adjustedPrevValueLeakage" : 0 } ], "reportPeriod" : ISODate("2020-08-31T20:00:00Z"), "_class" : "com.vodafone.price.manager.analytics.model.ValueLeakageInvoicePurchaseOrder" },
+{ "_id" : ObjectId("5f732852701a7f05fbc57078"), "tradingModel" : "Buy From", "priceAgreementReferenceName" : "VPC_BF_NW_OR_LU54_CNW_MULT_400017770_3C2F6FD63DCC", "supplierId" : "0400017770", "supplierName" : "ORACLE CORPORATION", "opcoCode" : "LU07", "outlineAgreementNumber" : "1250030828", "supplierPartNumber" : "2A39ACEA53AB4865843CE4F0BD31B8C3", "purchaseOrderNumberOne" : "9F006D9B32C7402DB905ACFEE5272C7F", "purchaseOrderCreationDate" : ISODate("2023-09-13T20:00:00Z"), "quantityOrderedPurchaseOrder" : 20, "priceReference" : "Purchase Order Date", "invoiceDate" : ISODate("2022-03-29T20:00:00Z"), "invoiceNumber" : "5434EA2F7C7942F9979402A80AFD1D79", "invoiceQuantity" : 57.55, "netPricePOPrice" : 62.4, "invoiceUnitPriceAsPerTc" : 87.68, "priceUnitPo" : 29.03, "priceMechanish" : "VolumeCommitment", "categoryManager" : "8BA852EDD867433699A31730AB3C01B8", "valueLeakages" : [ { "leakageValue" : -1844.4, "calculationDate" : ISODate("2020-09-29T12:28:02.263Z"), "finalPriceWithQuantityAsPerSpnPa" : 1931.2, "unitPriceAsPerInvoicePo" : 4.339999999999996, "vlCalculatedQuantity" : 20, "adjustedPrevValueLeakage" : 0 } ], "reportPeriod" : ISODate("2020-08-31T20:00:00Z"), "_class" : "com.vodafone.price.manager.analytics.model.ValueLeakageInvoicePurchaseOrder" },
+{ "_id" : ObjectId("5f73288d701a7f05fbc570ce"), "tradingModel" : "Agency", "priceAgreementReferenceName" : "VFEG_AG_NW_CO_VFEG_RAD_MULT_400051882_3A91ACAC981E", "supplierId" : "0400051882", "supplierName" : "COMMSCOPE", "opcoCode" : "EG00", "outlineAgreementNumber" : "1250006203", "supplierPartNumber" : "6F55D05A22AE4821A2427708EFABA021", "purchaseOrderNumberOne" : "B458141A8DC04740A4B1F54DB9652988", "purchaseOrderCreationDate" : ISODate("2017-11-19T20:00:00Z"), "quantityOrderedPurchaseOrder" : 40, "priceReference" : "Purchase Order Date", "invoiceDate" : ISODate("2013-03-26T20:00:00Z"), "invoiceNumber" : "29A5F889C0994FD0B78689E3B740BF3A", "invoiceQuantity" : 34.67, "netPricePOPrice" : 5.26, "invoiceUnitPriceAsPerTc" : 24.31, "priceUnitPo" : 81.21, "priceMechanish" : "VolumeCommitment", "categoryManager" : "B87CC53236DE420B85EC0E1904BAD5B0", "valueLeakages" : [ { "leakageValue" : -4149.428571428572, "calculationDate" : ISODate("2020-09-29T12:29:01.033Z"), "finalPriceWithQuantityAsPerSpnPa" : 4359.828571428571, "unitPriceAsPerInvoicePo" : 5.26, "vlCalculatedQuantity" : 40, "adjustedPrevValueLeakage" : 0 } ], "reportPeriod" : ISODate("2020-08-31T20:00:00Z"), "_class" : "com.vodafone.price.manager.analytics.model.ValueLeakageInvoicePurchaseOrder" },
+{ "_id" : ObjectId("5f73288e701a7f05fbc570d0"), "tradingModel" : "Agency", "priceAgreementReferenceName" : "VFEG_AG_NW_CO_VFEG_RAD_MULT_400051882_3A91ACAC981E", "supplierId" : "0400051882", "supplierName" : "COMMSCOPE", "opcoCode" : "EG00", "outlineAgreementNumber" : "1250006203", "supplierPartNumber" : "0753145C352A4B89828C61EB8BDCF309", "purchaseOrderNumberOne" : "EC54E5E2D7A840288101EE654CBF3F0F", "purchaseOrderCreationDate" : ISODate("2012-06-26T20:00:00Z"), "quantityOrderedPurchaseOrder" : 60, "priceReference" : "Purchase Order Date", "invoiceDate" : ISODate("2016-11-13T20:00:00Z"), "invoiceNumber" : "FFD5DA4EDC574677842D9A0DA875A288", "invoiceQuantity" : 63.95, "netPricePOPrice" : 50.61, "invoiceUnitPriceAsPerTc" : 89.26, "priceUnitPo" : 61, "priceMechanish" : "VolumeCommitment", "categoryManager" : "B87CC53236DE420B85EC0E1904BAD5B0", "valueLeakages" : [ { "leakageValue" : 404.625, "calculationDate" : ISODate("2020-09-29T12:29:02.222Z"), "finalPriceWithQuantityAsPerSpnPa" : 2631.975, "unitPriceAsPerInvoicePo" : 50.61, "vlCalculatedQuantity" : 60, "adjustedPrevValueLeakage" : 0 } ], "reportPeriod" : ISODate("2020-08-31T20:00:00Z"), "_class" : "com.vodafone.price.manager.analytics.model.ValueLeakageInvoicePurchaseOrder" }
+
+]
+)
+
+
+
+
+
+db.ValueLeakageInvoicePurchaseOrder.aggregate(
+[
+{$project: {spn: '$supplierPartNumber', po:'$purchaseOrderNumberOne', vl: {$slice:['$valueLeakages', 1]}}},
+{$unwind: { path: '$vl', preserveNullAndEmptyArrays: true } },
+{$project: {dtt:'$vl.calculationDate', yyyymm: {$dateToString: { format: '%Y-%m', date: '$vl.calculationDate' }}, val: '$vl.leakageValue'}},
+{$group:{_id: '$yyyymm', val:{'$sum':'$val'}}},
+{$sort:{_id:1}}
+]
+)
+
+
+pma_ana_release_value_leakage_30Sep_11
+
+db.ValueLeakageInvoicePurchaseOrder.aggregate(
+[
+{$project: {vl: {$slice:['$valueLeakages', 1]}}},
+{$unwind: { path: '$vl', preserveNullAndEmptyArrays: true } },
+{$project: {dtt:'$vl.calculationDate', yyyymm: {$dateToString: { format: '%Y-%m', date: '$vl.calculationDate' }}, val: '$vl.leakageValue'}},
+{$match:{'yyyymm' : {$in: ['2020-09']}}},
+{$group:{_id: null, val:{'$sum':'$val'}}},
+//{$sort:{_id:1}}
+]
+)
+
+
+
+
+db.ValueLeakageInvoicePurchaseOrder.aggregate([
+{$project:{
+	_id: null,
+	id:'$invoiceDate',
+	pod:'$purchaseOrderCreationDate',
+	pf:'$priceReference',
+	purchaseOrderCreationDate:{
+		$cond:{
+			if:{$eq:['$priceReference', 'Purchase Order Date']}, 
+			then: '$purchaseOrderCreationDate', 
+			else: '$invoiceDate'
+			}
+	},
+}}
+])
+
+
+
+
+db.ValueLeakageInvoicePurchaseOrder.aggregate([
+{$project:{
+    '_id': 0,
+    'tradingModel':1,
+    'priceAgreementReferenceName':1,
+    'supplierName':1,
+    'opcoCode':1,
+    'outlineAgreementNumber':1,
+     vl: {$slice:['$valueLeakages', -1]}
+    }
+},
+{$unwind: { path: '$vl' }},
+{$project: {
+    'tradingModel':1,
+    'priceAgreementReferenceName':1,
+    'supplierName':1,
+    'opcoCode':1,
+    'outlineAgreementNumber':1,
+    dtt:'$vl.calculationDate', 
+    yyyymm: {$dateToString: { format: '%Y-%m', date: '$vl.calculationDate' }}, 
+    val: '$vl.leakageValue'}},
+{$group:{_id:{
+    tm: '$tradingModel',
+    pa:'$priceAgreementReferenceName',
+    sn: '$supplierName',
+    oc: '$opcoCode',
+    ola: '$outlineAgreementNumber',
+    dt: '$yyyymm'}, val:{$sum:'$val'}
+}},
+{$project:{tm:'$_id.tm', pa:'$_id.pa', sn:'$_id.sn', oc:'$_id.oc', ola:'$_id.ola', dt:'$_id.dt', val:'$val'}},
+{$skip: 5},
+{$limit: 5}
+//ddddd
+])
+
+
+
+
+db.ValueLeakageInvoicePurchaseOrder.aggregate([
+ {$project:{
+    _id: 0,
+    supplierPartNumber:1,
+    materialGroupL4:1,
+    purchaseOrderNumberOne:1,
+    purchaseOrderCreationDate:{$dateToString: { format: '%d/%m/%Y', date: '$purchaseOrderCreationDate' }},
+    poValue:{'$multiply':[{'$divide':['$netPricePOPrice', '$priceUnitPo']}, '$quantityOrderedPurchaseOrder']},
+    invoiceNumber:1,
+    invoiceDate:{$dateToString: { format: '%d/%m/%Y', date: '$invoiceDate' }},
+    invValue:{'$multiply':[{'$divide':['$invoiceUnitPriceAsPerTc', '$priceUnitPo']}, '$invoiceQuantity']},
+    voucherConsumed:1
+ }
+ },
+ { $unwind:{path: '$voucherConsumed'}},
+  {$project:{
+    supplierPartNumber:1,
+    materialGroupL4:1,
+    purchaseOrderNumberOne:1,
+    purchaseOrderCreationDate:1,
+    poValue:1,
+    invoiceNumber:1,
+    invoiceDate:1,
+    invValue:1,
+    redeemedVal: '$voucherConsumed.consumed'
+ }},
+
+{$group:{_id:{
+	supplierPartNumber:'$supplierPartNumber',
+    materialGroupL4:'$materialGroupL4',
+    purchaseOrderNumberOne:'$purchaseOrderNumberOne',
+    purchaseOrderCreationDate:'$purchaseOrderCreationDate',
+    poValue:'$poValue',
+    invoiceNumber:'$invoiceNumber',
+    invoiceDate:'$invoiceDate',
+    invValue:'$invValue'
+	}, 
+	val:{'$sum':'$redeemedVal'}
+	}},
+
+{$project:{
+	supplierPartNumber:'_id.$supplierPartNumber',
+    materialGroupL4:'$_id.materialGroupL4',
+    purchaseOrderNumberOne:'$_id.purchaseOrderNumberOne',
+    purchaseOrderCreationDate:'$_id.purchaseOrderCreationDate',
+    poValue:'$_id.poValue',
+    invoiceNumber:'$_id.invoiceNumber',
+    invoiceDate:'$_id.invoiceDate',
+    invValue:'$_id.invValue'
+	val:{'$sum':'$redeemedVal'}
+	}},
+
+
+])
+
+
+{$group:{_id:{
+	supplierPartNumber:'$supplierPartNumber',
+    materialGroupL4:'$materialGroupL4',
+    purchaseOrderNumberOne:'$purchaseOrderNumberOne',
+    purchaseOrderCreationDate:'$purchaseOrderCreationDate',
+    poValue:'$poValue',
+    invoiceNumber:'$invoiceNumber',
+    invoiceDate:'$invoiceDate',
+    invValue:'$invValue'
+	}, 
+	val:{'$sum':'$redeemedVal'}
+	}
+} 
+ //{$group:{_id:null, count:{$sum:1}}}
+
+
+    materialGroupL4:1,
+    purchaseOrderNumberOne:1,
+    purchaseOrderCreationDate:1,
+    poValue:1,
+    invoiceNumber:1,
+    invoiceDate:1,
+    invValue:1
+
+
+
+
+
+
+
+

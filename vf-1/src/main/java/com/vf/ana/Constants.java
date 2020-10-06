@@ -8,6 +8,7 @@ public class Constants {
 	public static final String AGGREGATED_DATA_FIRST_LEVEL_COLLECTION_NAME = "aggregatedDataFirstLevel123";
 	public static final String AGGREGATED_DATA_SECOND_LEVEL_COLLECTION_NAME = "aggregatedDataSecondLevel123";
 	public static final String VALUE_LEAKAGE_COLLECTION_NAME = "ValueLeakageInvoicePurchaseOrder";
+	public static final String VALUE_LEAKAGE_MASTER_COLLECTION_NAME = "voucherCollectionDetails";
 	public static final String VOUCHER_DETAILS_COLLECTION_NAME = VALUE_LEAKAGE_COLLECTION_NAME;
 	public static final String ORDER_VALUE="ORDER_VALUE";
 	public static final String LEAKAGE_VALUE="LEAKAGE_VALUE";
