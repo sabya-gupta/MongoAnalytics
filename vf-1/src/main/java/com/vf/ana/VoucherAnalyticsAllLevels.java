@@ -1,28 +1,16 @@
 package com.vf.ana;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Direction;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.stereotype.Service;
-
-
-import static com.mongodb.client.model.Aggregates.group;
 import static com.mongodb.client.model.Aggregates.match;
-import static com.mongodb.client.model.Filters.eq;
-import static com.mongodb.client.model.Filters.in;
-import static com.mongodb.client.model.Filters.gte;
-import static com.mongodb.client.model.Filters.lte;
 import static com.mongodb.client.model.Filters.and;
+import static com.mongodb.client.model.Filters.gte;
+import static com.mongodb.client.model.Filters.in;
+import static com.mongodb.client.model.Filters.lte;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,16 +20,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Service;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Accumulators;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
-import com.mongodb.client.model.UnwindOptions;
 
 
 @Service
@@ -55,7 +41,6 @@ public class VoucherAnalyticsAllLevels {
 	
 	Logger logger = LoggerFactory.getLogger(getClass());
 	
-	private final String collectionName = Constants.VALUE_LEAKAGE_COLLECTION_NAME;
 	
 	//For top level
 	/**
@@ -64,6 +49,7 @@ public class VoucherAnalyticsAllLevels {
 	public Map<String, Double> getTotalVoucherKPIs(Map<String, List<String>> filterMap, List<String> yyyymm) {
 		Map<String, Double> ret = new HashMap<>();
 		
+		final String collectionName = Constants.PRICE_AGREEMENT_SPN_DETAILS_COLLECTION_NAME;
 		List<Bson> pipeLine = new ArrayList<>();
 
 		if(filterMap!=null) {
@@ -73,31 +59,69 @@ public class VoucherAnalyticsAllLevels {
 
 		String qConvDate = "{$project:{"
 				+ "_id: 0, "
-				+ "ivu:'$invoiceUnitPriceAsPerTc', "
-				+ "poN:'$purchaseOrderNumberOne', "
-				+ "poQ: '$quantityOrderedPurchaseOrder', "
-				+ "net: '$netPricePOPrice', "
-				+ "priceUnitPo: '$priceUnitPo', "
-				+ "idyy : {$dateToString: { format: '%Y-%m', date: '$invoiceDate' }}, "
-				+ "podtyy : {$dateToString: { format: '%Y-%m', date: '$purchaseOrderCreationDate' }},"
-				+ "vouch : '$voucherConsumed'"
+				+ "supplierPartNumber: '$supplierPartNumber', "
+				+ "tradingModel: '$tradingModel' , "
+				+ "supplierId: '$supplierId' , " 
+				+ "outlineAgreementNumber: '$outlineAgreementNumber', "
+				+ "catalogueType: '$catalogueType' , " 
+				+ "opcoCode: '$opcoCode', "
+				+ "parentSupplierId: '$parentSupplierId' , " 
+				+ "materialGroupL4: '$materialGroupL4' , "
+				+ "priceAgreementReferenceName: '$priceAgreementReferenceName'," 
+				+ "vouch : '$appliedVoucher'"
 		+ "} }";
 		
-		pipeLine.add(BasicDBObject.parse(qConvDate));			
+		pipeLine.add(BasicDBObject.parse(qConvDate));
+		
+		
+		
+//		pipeLine.add(BasicDBObject.parse("{'$limit':10}"));
+//		common.printDocs(collectionName, pipeLine, mongoTemplate);
 
-		
-		// add dateFilters
-		if (yyyymm != null && yyyymm.size() > 0) {
-			Bson dateFilter = match(in("podtyy", yyyymm));
-			pipeLine.add(dateFilter);
-		}
-		
 		//now unwind
 //		pipeLine.add(Aggregates.unwind("$vouch", new UnwindOptions().preserveNullAndEmptyArrays(true)));
 		pipeLine.add(Aggregates.unwind("$vouch"));
+//		common.printDocs(collectionName, pipeLine, mongoTemplate);
+
+		qConvDate = "{$project:{"
+				+ "_id: 0, "
+				+ "supplierPartNumber: '$supplierPartNumber', "
+				+ "tradingModel: '$tradingModel' , "
+				+ "supplierId: '$supplierId' , " 
+				+ "outlineAgreementNumber: '$outlineAgreementNumber', "
+				+ "catalogueType: '$catalogueType' , " 
+				+ "opcoCode: '$opcoCode', "
+				+ "parentSupplierId: '$parentSupplierId' , " 
+				+ "materialGroupL4: '$materialGroupL4' , "
+				+ "priceAgreementReferenceName: '$priceAgreementReferenceName'," 
+				+ "vouchstartdt : '$vouch.startDate' , "
+				+ "vouchenddt : '$vouch.endDate' , "
+//				+ "vouchstartyymm : {$dateToString: { format: '%Y-%m', date: '$vouch.startDate' }, "
+//				+ "vouchendyymm : {$dateToString: { format: '%Y-%m', date: '$vouch.endDate' }, "
+				+ "vouchval : '$vouch.totalValue', "
+		+ "} }";
+		
+		pipeLine.add(BasicDBObject.parse(qConvDate));			
+//		common.printDocs(collectionName, pipeLine, mongoTemplate);
+		
+		// add dateFilters
+		if (yyyymm != null && yyyymm.size() > 0) {
+			List<Bson> orFilters = new ArrayList<>();
+			for(String ym: yyyymm) {
+				LocalDate startDate = LocalDate.parse(ym+"-01", DateTimeFormatter.ISO_DATE);
+				YearMonth month = YearMonth.from(startDate);
+				LocalDate endDate   = month.atEndOfMonth();
+				
+				Bson dateFilter = Filters.and(Filters.lte("vouchstartdt", endDate), Filters.gte("vouchenddt", startDate));
+				orFilters.add(dateFilter);
+			}
+			Bson dateFilter = match(Filters.or(orFilters));
+			pipeLine.add(dateFilter);
+		}
+		
 
 		//now Sum them up
-		pipeLine.add(BasicDBObject.parse("{$group:{_id:null, con:{'$sum':'$vouch.consumed'}, rem:{'$sum':'$vouch.remaining'}}}"));
+		pipeLine.add(BasicDBObject.parse("{$group:{_id:null, con:{'$sum':'$vouchval'}}}"));
 		
 		printDocs(collectionName, pipeLine);
 		
@@ -110,7 +134,7 @@ public class VoucherAnalyticsAllLevels {
 		
 		try {
 			double consumed = rec.first().getDouble("con");
-			ret.put(Constants.VOUCHER_CONSUMED, consumed);
+			ret.put(Constants.VOUCHER_TOTAL, consumed);
 		}catch(NullPointerException nx) {
 			logger.error(nx.getMessage());
 			nx.printStackTrace();
@@ -133,7 +157,8 @@ public class VoucherAnalyticsAllLevels {
 	 * Total - with filter and dates and without filter and dates
 	 */
 	public void getTotalVoucherRemaining(Map<String, List<String>> filterMap, List<String> yyyymm, Map<String, Double> ret) {
-		
+		final String collectionName = Constants.VOUCHER_DETAILS_COLLECTION_NAME;
+
 		List<Bson> pipeLine = new ArrayList<>();
 
 		if(filterMap!=null) {
@@ -207,6 +232,7 @@ public class VoucherAnalyticsAllLevels {
 	
 	//get for last 7 days
 	public Map<String, Map<String, Double>> getTotalVoucherKPIsForLast7Days(Map<String, List<String>> filterMap) {
+		final String collectionName = Constants.VOUCHER_DETAILS_COLLECTION_NAME;
 		Map<String, Map<String, Double>> ret = new HashMap<>();
 		
 		List<Bson> pipeLine = new ArrayList<>();

@@ -34,6 +34,7 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Accumulators;
 import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.UnwindOptions;
 
@@ -1519,7 +1520,7 @@ public class KPIFilterAndGroupByHandler {
 			Map<String, List<String>> argfilter, int pgNum, List<String> yyyymm,
 			Map<String, Map<String, Double>> retMap, boolean second, String searchStr) {
 
-		String collectionName = Constants.VOUCHER_DETAILS_COLLECTION_NAME;
+		String collectionName = Constants.PRICE_AGREEMENT_SPN_DETAILS_COLLECTION_NAME;
 
 		if (retMap == null) {
 			retMap = new LinkedHashMap<String, Map<String, Double>>();
@@ -1556,17 +1557,7 @@ public class KPIFilterAndGroupByHandler {
 
 		Bson firstProjectVLBson = BasicDBObject
 				.parse("{$project:{"
-						+ "_id: 0, "
-						+ "ivu:'$invoiceUnitPriceAsPerTc', "
-						+ "poN:'$purchaseOrderNumberOne', "
-						+ "poQ: '$quantityOrderedPurchaseOrder', "
-						+ "net: '$netPricePOPrice', "
-						+ "priceUnitPo: '$priceUnitPo', "
-						+ "idyy : {$dateToString: { format: '%Y-%m', date: '$invoiceDate' }}, "
-						+ "podtyy : {$dateToString: { format: '%Y-%m', date: '$purchaseOrderCreationDate' }},"
-						+ "iddd : {$dateToString: { format: '%Y-%m-%d', date: '$invoiceDate' }}, "
-						+ "podtdd : {$dateToString: { format: '%Y-%m-%d', date: '$purchaseOrderCreationDate' }},"
-						+ "vouch : '$voucherConsumed'"
+						+ "vouch : '$appliedVoucher'"
 						+ "supplierPartNumber: '$supplierPartNumber', "
 						+ "tradingModel: '$tradingModel' , "
 						+ "supplierId: '$supplierId' , " 
@@ -1578,34 +1569,78 @@ public class KPIFilterAndGroupByHandler {
 						+ "priceAgreementReferenceName: '$priceAgreementReferenceName'," 
 				+ "} }");
 		pipeline.add(firstProjectVLBson);
-
-//		printDocs(collectionName, pipeline);
-
-		// add dateFilters
-		if (yyyymm != null && yyyymm.size() > 0) {
-			Bson dateFilter = match(in("podtyy", yyyymm));
-			pipeline.add(dateFilter);
-		}
+//		common.printDocs(collectionName, pipeline, mongoTemplate);
 
 //		//now unwind
 		pipeline.add(Aggregates.unwind("$vouch"));
+//		common.printDocs(collectionName, pipeline, mongoTemplate);
+
+		
+		Bson expandVouch = BasicDBObject
+				.parse("{$project:{"
+						+ "vouchstdt : '$vouch.startDate'"
+						+ "vouchenddt : '$vouch.endDate'"
+						+ "vouchval : '$vouch.totalValue'"
+						+ "vouchid : '$vouch.voucherId'"
+						+ "supplierPartNumber: '$supplierPartNumber', "
+						+ "tradingModel: '$tradingModel' , "
+						+ "supplierId: '$supplierId' , " 
+						+ "outlineAgreementNumber: '$outlineAgreementNumber', "
+						+ "catalogueType: '$catalogueType' , " 
+						+ "opcoCode: '$opcoCode', "
+						+ "parentSupplierId: '$parentSupplierId' , " 
+						+ "materialGroupL4: '$materialGroupL4' , "
+						+ "priceAgreementReferenceName: '$priceAgreementReferenceName'," 
+				+ "} }");
+		pipeline.add(expandVouch);
+
+		
+//		common.printDocs(collectionName, pipeline, mongoTemplate);
+
+		// add dateFilters
+		if (yyyymm != null && yyyymm.size() > 0) {
+			
+			List<Bson> andList = new ArrayList<>();
+			for(String ym : yyyymm) {
+				LocalDate firstDay = LocalDate.parse(ym+"-01", DateTimeFormatter.ISO_DATE);
+				String yymm = firstDay.format(DateTimeFormatter.ofPattern("YYYY-MM"));
+				LocalDate lastDay = YearMonth.from(firstDay).atEndOfMonth();
+				andList.add(Filters.and(Filters.gte("vouchenddt", firstDay), Filters.lte("vouchstdt", lastDay)));
+			}
+			
+			if(andList.size()>0) {
+				pipeline.add(match(and(andList)));
+			}
+			
+		}
+
 
 
 //		printDocs(collectionName, pipeline);
 
 
+		String grpDist = "{$group:{"
+				+ "_id:{dim : '$"+groupByPropName+"', vid: '$vouchid'}, "
+				+"val :{'$max':'$vouchval'} "
+				+ "}}";
+		Bson groupdistinct = BasicDBObject.parse(grpDist);
+		pipeline.add(groupdistinct);
+//		common.printDocs(collectionName, pipeline, mongoTemplate);
+
+		String addUpStr = "{$group:{"
+				+ "_id:'$_id.dim', "
+				+Constants.VOUCHER_TOTAL+":{'$sum':'$val'} "
+				+ "}}";
 		
-		Bson secondProjectVLBson = BasicDBObject.parse("{$group:{_id:'$"+groupByPropName+"', "+
-		Constants.VOUCHER_CONSUMED+":{'$sum':'$vouch.consumed'}, "+Constants.VOUCHER_REMAINING+":{'$sum':'$vouch.remaining'}}}");
-		pipeline.add(secondProjectVLBson);
+		Bson addUp = BasicDBObject.parse(addUpStr);
+		pipeline.add(addUp);
 
 //		common.printDocs(collectionName, pipeline, mongoTemplate);
 
 
 		List<String> kpisV = new ArrayList<String>();
-		kpisV.add(Constants.VOUCHER_CONSUMED);
-		kpisV.add(Constants.VOUCHER_REMAINING);
-		String sortByField = Constants.VOUCHER_CONSUMED;
+		kpisV.add(Constants.VOUCHER_TOTAL);
+		String sortByField = Constants.VOUCHER_TOTAL;
 		common.getResults(pipeline, dir, pgNum, retMap, kpisV, collectionName, sortByField, mongoTemplate);
 
 		if (!second) {
@@ -1855,7 +1890,7 @@ public class KPIFilterAndGroupByHandler {
 	public int getTotalVoucherItemsCOUNT(String groupByPropName, Map<String, List<String>> argfilter, 
 			List<String> yyyymm, String searchStr) {
 
-		String collectionName = Constants.VOUCHER_DETAILS_COLLECTION_NAME;
+		String collectionName = Constants.PRICE_AGREEMENT_SPN_DETAILS_COLLECTION_NAME;
 
 		List<Bson> pipeline = new ArrayList<>();
 
@@ -1877,20 +1912,11 @@ public class KPIFilterAndGroupByHandler {
 			Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
 			pipeline.add(srchBson);
 		}
+		
 
 		Bson firstProjectVLBson = BasicDBObject
 				.parse("{$project:{"
-						+ "_id: 0, "
-						+ "ivu:'$invoiceUnitPriceAsPerTc', "
-						+ "poN:'$purchaseOrderNumberOne', "
-						+ "poQ: '$quantityOrderedPurchaseOrder', "
-						+ "net: '$netPricePOPrice', "
-						+ "priceUnitPo: '$priceUnitPo', "
-						+ "idyy : {$dateToString: { format: '%Y-%m', date: '$invoiceDate' }}, "
-						+ "podtyy : {$dateToString: { format: '%Y-%m', date: '$purchaseOrderCreationDate' }},"
-						+ "iddd : {$dateToString: { format: '%Y-%m-%d', date: '$invoiceDate' }}, "
-						+ "podtdd : {$dateToString: { format: '%Y-%m-%d', date: '$purchaseOrderCreationDate' }},"
-						+ "vouch : '$voucherConsumed'"
+						+ "vouch : '$appliedVoucher'"
 						+ "supplierPartNumber: '$supplierPartNumber', "
 						+ "tradingModel: '$tradingModel' , "
 						+ "supplierId: '$supplierId' , " 
@@ -1902,36 +1928,70 @@ public class KPIFilterAndGroupByHandler {
 						+ "priceAgreementReferenceName: '$priceAgreementReferenceName'," 
 				+ "} }");
 		pipeline.add(firstProjectVLBson);
-
-//		printDocs(collectionName, pipeline);
-
-		// add dateFilters
-		if (yyyymm != null && yyyymm.size() > 0) {
-			Bson dateFilter = match(in("podtyy", yyyymm));
-			pipeline.add(dateFilter);
-		}
+//		common.printDocs(collectionName, pipeline, mongoTemplate);
 
 //		//now unwind
 		pipeline.add(Aggregates.unwind("$vouch"));
+//		common.printDocs(collectionName, pipeline, mongoTemplate);
+
+		
+		Bson expandVouch = BasicDBObject
+				.parse("{$project:{"
+						+ "vouchstdt : '$vouch.startDate'"
+						+ "vouchenddt : '$vouch.endDate'"
+						+ "vouchval : '$vouch.totalValue'"
+						+ "vouchid : '$vouch.voucherId'"
+						+ "supplierPartNumber: '$supplierPartNumber', "
+						+ "tradingModel: '$tradingModel' , "
+						+ "supplierId: '$supplierId' , " 
+						+ "outlineAgreementNumber: '$outlineAgreementNumber', "
+						+ "catalogueType: '$catalogueType' , " 
+						+ "opcoCode: '$opcoCode', "
+						+ "parentSupplierId: '$parentSupplierId' , " 
+						+ "materialGroupL4: '$materialGroupL4' , "
+						+ "priceAgreementReferenceName: '$priceAgreementReferenceName'," 
+				+ "} }");
+		pipeline.add(expandVouch);
+
+		
+//		common.printDocs(collectionName, pipeline, mongoTemplate);
+
+		// add dateFilters
+		if (yyyymm != null && yyyymm.size() > 0) {
+			
+			List<Bson> andList = new ArrayList<>();
+			for(String ym : yyyymm) {
+				LocalDate firstDay = LocalDate.parse(ym+"-01", DateTimeFormatter.ISO_DATE);
+				String yymm = firstDay.format(DateTimeFormatter.ofPattern("YYYY-MM"));
+				LocalDate lastDay = YearMonth.from(firstDay).atEndOfMonth();
+				andList.add(Filters.and(Filters.gte("vouchenddt", firstDay), Filters.lte("vouchstdt", lastDay)));
+			}
+			
+			if(andList.size()>0) {
+				pipeline.add(match(and(andList)));
+			}
+			
+		}
+
 
 
 //		printDocs(collectionName, pipeline);
 
 
-		
-		Bson secondProjectVLBson = BasicDBObject.parse("{$group:{_id:'$"+groupByPropName+"', "+
-		Constants.VOUCHER_CONSUMED+":{'$sum':'$vouch.consumed'}, "+Constants.VOUCHER_REMAINING+":{'$sum':'$vouch.remaining'}}}");
-		pipeline.add(secondProjectVLBson);
-
+		String grpDist = "{$group:{"
+				+ "_id:{dim : '$"+groupByPropName+"', vid: '$vouchid'}, "
+				+"val :{'$max':'$vouchval'} "
+				+ "}}";
+		Bson groupdistinct = BasicDBObject.parse(grpDist);
+		pipeline.add(groupdistinct);
 //		common.printDocs(collectionName, pipeline, mongoTemplate);
 
 
 		int count = 0;
 		count = common.getCount(collectionName, pipeline, mongoTemplate);
-		
-		logger.debug("The count is = {}", count);
+		logger.debug("The count VT = {}", count);
 		return count;
-
+		
 	}
 
 	

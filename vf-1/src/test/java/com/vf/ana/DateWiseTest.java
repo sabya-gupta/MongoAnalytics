@@ -14,7 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 @SpringBootTest
 public class DateWiseTest {
 	@Autowired
-	MonthWiseAggregation monthWiseAggregation;
+	MonthWiseAggregationLast1YrTopLevel monthWiseAggregation;
 	
 	Logger logger = LoggerFactory.getLogger(getClass());
 	

@@ -44,6 +44,7 @@ public class Constants {
 	public static final String KPI_VVREMAINING_VALUE = "remVoucherValue";
 	public static final String KPI_VV_VALUE = "voucherValue";
 	public static final String VOUCHER_CONSUMED = "VOUCHER_CONSUMED";
+	public static final String VOUCHER_TOTAL = "VOUCHER_TOTAL";
 	public static final String VOUCHER_REMAINING = "VOUCHER_REMAINING";
 
 }

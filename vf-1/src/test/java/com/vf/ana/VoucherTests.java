@@ -23,8 +23,11 @@ public class VoucherTests {
 	
 	@Test
 	public void topLevelTestsForVR() {
-//		voucherAnalyticsAllLevels.getTotalVoucherRemaining(null, null, new HashMap<String, Double>());
-		voucherAnalyticsAllLevels.getTotalVoucherKPIs(null, null);
+//		voucherAnalyticsAllLevels.getTotalVoucherKPIs(null, null);
+
+		List<String> yyyymm = new ArrayList<String>();
+		yyyymm.add("2020-08");
+		voucherAnalyticsAllLevels.getTotalVoucherKPIs(null, yyyymm);
 	}	
 	@Test
 	public void topLevelTests() {

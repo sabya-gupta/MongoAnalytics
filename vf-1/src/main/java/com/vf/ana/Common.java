@@ -184,11 +184,11 @@ public class Common {
 //		printDocs(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline);
 
 		if (retMap.size() == 0) {
-			String skipStr = "{$skip:" + (pgNum * Constants.PAGE_SIZE) + "}}";
+			String skipStr = "{$skip:" + (pgNum * Constants.PAGE_SIZE) + "}";
 			Bson bskp = BasicDBObject.parse(skipStr);
 			pipeline.add(bskp);
 
-			String limit = "{$limit:" + Constants.PAGE_SIZE + "}}";
+			String limit = "{$limit:" + Constants.PAGE_SIZE + "}";
 			Bson blim = BasicDBObject.parse(limit);
 			pipeline.add(blim);
 		}

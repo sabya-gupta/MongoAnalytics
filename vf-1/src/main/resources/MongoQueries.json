@@ -943,11 +943,9 @@ db.ValueLeakageInvoicePurchaseOrder.aggregate([
     poValue:'$_id.poValue',
     invoiceNumber:'$_id.invoiceNumber',
     invoiceDate:'$_id.invoiceDate',
-    invValue:'$_id.invValue'
-	val:{'$sum':'$redeemedVal'}
+    invValue:'$_id.invValue',
+	val:'$val'
 	}},
-
-
 ])
 
 
@@ -982,3 +980,22 @@ db.ValueLeakageInvoicePurchaseOrder.aggregate([
 
 
 
+{$group:{_id: 
+	{
+	supplierPartNumber:'$supplierPartNumber',
+	materialGroupL4:'$materialGroupL4',
+	purchaseOrderNumberOne:'$purchaseOrderNumberOne',
+	purchaseOrderCreationDate:'$purchaseOrderCreationDate',
+	poValue:'$poValue',
+	invoiceNumber:'$invoiceNumber',
+	invoiceDate:'$invoiceDate',
+	invValue:'$invValue', 
+	voucherLimitation:$voucherLimitation
+	} , 
+	val:{'$sum':'$redeemedVal'}}}
+
+
+
+
+
+[{supplierName=Sedus Stoll Ges.m.b.H., materialShortDesc=E102 - Office / Retail / External Equipt, catalogueType=SV, materialGroupL4=E102, priceAgreementReferenceName=VPC_BF_SV_Se_LU60_PMS_MULT_400074915_E17FA0DDC4EF, supplierPartNumber=4A42964D084942C38914F4871D12019F, hr=10746, outlineAgreementNumber=1250002112, day=449}, {supplierName=Sedus Stoll Ges.m.b.H., materialShortDesc=E102 - Office / Retail / External Equipt, catalogueType=SV, materialGroupL4=E102, priceAgreementReferenceName=VPC_BF_SV_Se_LU60_PMS_MULT_400074915_E17FA0DDC4EF, supplierPartNumber=14CF0DC3D0A2490790E229282A061D0B, hr=10746, outlineAgreementNumber=1250002112, day=449}, {supplierName=Sedus Stoll Ges.m.b.H., materialShortDesc=E102 - Office / Retail / External Equipt, catalogueType=SV, materialGroupL4=E102, priceAgreementReferenceName=VPC_BF_SV_Se_LU60_PMS_MULT_400074915_E17FA0DDC4EF, supplierPartNumber=B7537307A5654FD2852498F17F664E9C, hr=10746, outlineAgreementNumber=1250002112, day=449}, {supplierName=Sedus Stoll Ges.m.b.H., materialShortDesc=E102 - Office / Retail / External Equipt, catalogueType=SV, materialGroupL4=E102, priceAgreementReferenceName=VPC_BF_SV_Se_LU60_PMS_MULT_400074915_E17FA0DDC4EF, supplierPartNumber=C9FB8DFD8FF04F9DB0ADDAA962642895, hr=10746, outlineAgreementNumber=1250002112, day=449}, {supplierName=Sedus Stoll Ges.m.b.H., materialShortDesc=E102 - Office / Retail / External Equipt, catalogueType=SV, materialGroupL4=E102, priceAgreementReferenceName=VPC_BF_SV_Se_LU60_PMS_MULT_400074915_E17FA0DDC4EF, supplierPartNumber=39AFC8F8000A40F28EEF658D89EE4884, hr=10746, outlineAgreementNumber=1250002112, day=449}]
