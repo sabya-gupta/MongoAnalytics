@@ -36,29 +36,29 @@ public class MonthWiseAggregationLast1YrTopLevel {
 	@Autowired
 	TopLevelAnalyticsUtilPAandActiveItems topLevelAnalyticsUtilPAandActiveItems;
 
-	public Map<String, Double> aggregateMonthWiseForLastOneYear(String kPIName, Map<String, List<String>> filters) {
+	public Map<String, Double> aggregateMonthWiseForLastOneYear(final String kPIName, final Map<String, List<String>> filters) {
 
 		String collectionName = null;
 		
-		Map<String, Double> retMap = new TreeMap<>();
+		final Map<String, Double> retMap = new TreeMap<>();
 
 		LocalDate endDate = LocalDate.now();
-		LocalDate endDateComp = LocalDate.now();
-		String strEndDate = endDate.format(DateTimeFormatter.ISO_DATE);
-		LocalDate startDateComp = endDate.minusDays(365);
-		LocalDate startDate = endDate.minusDays(365);
-		String strStartDate = startDate.format(DateTimeFormatter.ISO_DATE);
+		final LocalDate endDateComp = LocalDate.now();
+		final String strEndDate = endDate.format(DateTimeFormatter.ISO_DATE);
+		final LocalDate startDateComp = endDate.minusDays(365);
+		final LocalDate startDate = endDate.minusDays(365);
+		final String strStartDate = startDate.format(DateTimeFormatter.ISO_DATE);
 
 		
 		
-		List<String> months = new ArrayList<String>();
-		List<LocalDate> lastDays = new ArrayList<>();
-		List<LocalDate> firstDays = new ArrayList<>();
+		final List<String> months = new ArrayList<>();
+		final List<LocalDate> lastDays = new ArrayList<>();
+		final List<LocalDate> firstDays = new ArrayList<>();
 
 		while (endDate.compareTo(startDate) >= 0) {
-			String yymm = endDate.format(DateTimeFormatter.ofPattern("YYYY-MM"));
-			LocalDate ld = YearMonth.from(endDate).atEndOfMonth();
-			LocalDate firstDay = YearMonth.from(endDate).atDay(1);
+			final String yymm = endDate.format(DateTimeFormatter.ofPattern("YYYY-MM"));
+			final LocalDate ld = YearMonth.from(endDate).atEndOfMonth();
+			final LocalDate firstDay = YearMonth.from(endDate).atDay(1);
 			if (!lastDays.contains(ld))
 				lastDays.add(ld);
 			if (!months.contains(yymm)) {
@@ -70,29 +70,29 @@ public class MonthWiseAggregationLast1YrTopLevel {
 			endDate = endDate.minusDays(25);
 		}
 
-		List<Bson> pipeLine = new ArrayList<Bson>();
+		final List<Bson> pipeLine = new ArrayList<>();
 
 		if (filters != null && filters.size()>0) {
 			pipeLine.add(common.formMatchClauseForListFilterBson(filters));
 		}
 
 		
-		if(kPIName.equalsIgnoreCase(Constants.ORDER_VALUE)) {
+		if (kPIName.equalsIgnoreCase(Constants.ORDER_VALUE) || kPIName.equalsIgnoreCase(Constants.NUMBER_OF_ORDERS)) {
 			
 			collectionName = Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME;
 			
-			Bson matchClause = Aggregates.match(Filters.and(Filters.gte("purchaseOrderCreationDate", startDateComp), Filters.lte("purchaseOrderCreationDate", endDateComp)));
+			final Bson matchClause = Aggregates.match(Filters.and(Filters.gte("purchaseOrderCreationDate", startDateComp), Filters.lte("purchaseOrderCreationDate", endDateComp)));
 			pipeLine.add(matchClause);
 		}else if(kPIName.equalsIgnoreCase(Constants.INVOICE_VALUE)) {
 			
 			collectionName = Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME;
 			
-			Bson matchClause = Aggregates.match(Filters.and(Filters.gte("invoiceDate", startDateComp), Filters.lte("invoiceDate", endDateComp)));
+			final Bson matchClause = Aggregates.match(Filters.and(Filters.gte("invoiceDate", startDateComp), Filters.lte("invoiceDate", endDateComp)));
 			pipeLine.add(matchClause);
 		}else if(kPIName.equalsIgnoreCase(Constants.ACTIVE_ITEMS)) {
 			
-			for(LocalDate date1 : firstDays) {
-				int cnt = topLevelAnalyticsUtilPAandActiveItems.getTotalActivePAsORActiveItemsByDate(date1.format(DateTimeFormatter.ISO_DATE), filters, false);
+			for(final LocalDate date1 : firstDays) {
+				final int cnt = topLevelAnalyticsUtilPAandActiveItems.getTotalActivePAsORActiveItemsByDate(date1.format(DateTimeFormatter.ISO_DATE), filters, false);
 				retMap.put(date1.format(DateTimeFormatter.ofPattern("yyyy-MM")), (double) cnt);
 			}
 			logger.debug("{}", retMap);
@@ -100,8 +100,8 @@ public class MonthWiseAggregationLast1YrTopLevel {
 			
 		}else if(kPIName.equalsIgnoreCase(Constants.ACTIVE_PRICE_AGREEMENT)) {
 			
-			for(LocalDate date1 : firstDays) {
-				int cnt = topLevelAnalyticsUtilPAandActiveItems.getTotalActivePAsORActiveItemsByDate(date1.format(DateTimeFormatter.ISO_DATE), filters, true);
+			for(final LocalDate date1 : firstDays) {
+				final int cnt = topLevelAnalyticsUtilPAandActiveItems.getTotalActivePAsORActiveItemsByDate(date1.format(DateTimeFormatter.ISO_DATE), filters, true);
 				retMap.put(date1.format(DateTimeFormatter.ofPattern("yyyy-MM")), (double) cnt);
 			}
 			logger.debug("{}", retMap);
@@ -112,51 +112,79 @@ public class MonthWiseAggregationLast1YrTopLevel {
 
 
 		if(kPIName.equalsIgnoreCase(Constants.ORDER_VALUE)) {
-			String q2 = "{$project:{podate:{$dateToString: { format: '%Y-%m', date: '$purchaseOrderCreationDate' }}, value:{$multiply:[{$divide:['$netPricePOPrice', '$priceUnitPo']}, '$quantityOrderedPurchaseOrder']}   }}";
-			Bson bson2 = BasicDBObject.parse(q2);
+			final String q2 = "{$project:{podate:{$dateToString: { format: '%Y-%m', date: '$purchaseOrderCreationDate' }}, value:{$multiply:[{$divide:['$netPricePOPrice', '$priceUnitPo']}, '$quantityOrderedPurchaseOrder']}   }}";
+			final Bson bson2 = BasicDBObject.parse(q2);
 			pipeLine.add(bson2);
 			
 			common.printDocs(collectionName, pipeLine, mongoTemplate);
 
-			String q3 = "{$group:{_id:'$podate', value:{$sum:'$value'}}}";
-			Bson bson3 = BasicDBObject.parse(q3);
+			final String q3 = "{$group:{_id:'$podate', value:{$sum:'$value'}}}";
+			final Bson bson3 = BasicDBObject.parse(q3);
 			pipeLine.add(bson3);
 
 			common.printDocs(collectionName, pipeLine, mongoTemplate);
 
-			String q4 = "{$sort:{_id:1}}";
-			Bson bson4 = BasicDBObject.parse(q4);
+			final String q4 = "{$sort:{_id:1}}";
+			final Bson bson4 = BasicDBObject.parse(q4);
 			pipeLine.add(bson4);
 
 			common.printDocs(collectionName, pipeLine, mongoTemplate);
 		}else if (kPIName.equalsIgnoreCase(Constants.INVOICE_VALUE)){
 		
-			String q2 = "{$project:{podate:{$dateToString: { format: '%Y-%m', date: '$invoiceDate' }}, value:{$multiply:[{$divide:['$invoiceUnitPriceAsPerTc', '$priceUnitPo']}, '$invoiceQuantity']}   }}";
-			Bson bson2 = BasicDBObject.parse(q2);
+			final String q2 = "{$project:{podate:{$dateToString: { format: '%Y-%m', date: '$invoiceDate' }}, value:{$multiply:[{$divide:['$invoiceUnitPriceAsPerTc', '$priceUnitPo']}, '$invoiceQuantity']}   }}";
+			final Bson bson2 = BasicDBObject.parse(q2);
 			pipeLine.add(bson2);
 		
-			String q3 = "{$group:{_id:'$podate', value:{$sum:'$value'}}}";
-			Bson bson3 = BasicDBObject.parse(q3);
+			final String q3 = "{$group:{_id:'$podate', value:{$sum:'$value'}}}";
+			final Bson bson3 = BasicDBObject.parse(q3);
 			pipeLine.add(bson3);
 		
-			String q4 = "{$sort:{_id:1}}";
-			Bson bson4 = BasicDBObject.parse(q4);
+			final String q4 = "{$sort:{_id:1}}";
+			final Bson bson4 = BasicDBObject.parse(q4);
 			pipeLine.add(bson4);
 
+		} else if (kPIName.equalsIgnoreCase(Constants.NUMBER_OF_ORDERS)) {
+			final String q2 = "{$project:{podate:{$dateToString: { format: '%Y-%m', date: '$purchaseOrderCreationDate' }}, ponum:'$purchaseOrderNumberOne'   }}";
+			final Bson bson2 = BasicDBObject.parse(q2);
+			pipeLine.add(bson2);
+
+			common.printDocs(collectionName, pipeLine, mongoTemplate);
+
+			final String q3 = "{$group:{_id:{podate: '$podate', ponum:'$ponum'}, value:{$sum: 1}}}";
+			final Bson bson3 = BasicDBObject.parse(q3);
+			pipeLine.add(bson3);
+
+			common.printDocs(collectionName, pipeLine, mongoTemplate);
+
+			final String q3A = "{$group:{_id:'$_id.podate', value:{$sum: 1}}}";
+			final Bson bson3A = BasicDBObject.parse(q3A);
+			pipeLine.add(bson3A);
+
+			common.printDocs(collectionName, pipeLine, mongoTemplate);
+			logger.debug("---------------------------------------------");
+
+			final String q4 = "{$sort:{_id:1}}";
+			final Bson bson4 = BasicDBObject.parse(q4);
+			pipeLine.add(bson4);
+
+			common.printDocs(collectionName, pipeLine, mongoTemplate);
 		}
 		
 		logger.debug("123{}", retMap);
 
-		MongoDatabase mongo = mongoTemplate.getDb();
-		AggregateIterable<Document> ret = mongo.getCollection(collectionName)
+		final MongoDatabase mongo = mongoTemplate.getDb();
+		final AggregateIterable<Document> ret = mongo.getCollection(collectionName)
 				.aggregate(pipeLine);
 
 		ret.cursor().forEachRemaining(doc -> {
-			String key = doc.getString("_id");
+			final String key = doc.getString("_id");
 
 			if (months.contains(key)) {
-				Map<String, Double> hm = new HashMap<>();
-				retMap.put(doc.getString("_id"), doc.getDouble("value"));
+				final Map<String, Double> hm = new HashMap<>();
+				if (kPIName.equalsIgnoreCase(Constants.NUMBER_OF_ORDERS))
+					retMap.put(doc.getString("_id"), doc.getInteger("value").doubleValue());
+				else
+					retMap.put(doc.getString("_id"), doc.getDouble("value"));
 			}
 
 		});

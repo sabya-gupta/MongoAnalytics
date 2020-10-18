@@ -33,19 +33,19 @@ public class SPNValidityGrid {
 	@Autowired
 	Common common;
 	
-	public List<Map<String, String>> getSPNValidityGrid(int days, int pgSZ, int pgNo, Map<String, String> filterMap, String orderByField, int orderByDir){
+	public List<Map<String, String>> getSPNValidityGrid(final int days, final int pgSZ, final int pgNo, final Map<String, String> filterMap, String orderByField, final int orderByDir){
 		
-		List<Map<String, String>> retList = new ArrayList<>();
+		final List<Map<String, String>> retList = new ArrayList<>();
 
-		String collectionName = Constants.PRICE_AGREEMENT_SPN_DETAILS_COLLECTION_NAME;
+		final String collectionName = Constants.PRICE_AGREEMENT_SPN_DETAILS_COLLECTION_NAME;
 
-		List<Bson> pipeline = new ArrayList<>();
+		final List<Bson> pipeline = new ArrayList<>();
 
-		long factorDay2Milli = 1000*60*60*24;
+		final long factorDay2Milli = 1000*60*60*24;
 		
-		Logger logger = LoggerFactory.getLogger(getClass());
+		final Logger logger = LoggerFactory.getLogger(getClass());
 
-		String bson1 = " {$project:{ "
+		final String bson1 = " {$project:{ "
 				+ "_id: 0,"
 				+ "supplierPartNumber:1,"
 				+ "materialGroupL4:1,"
@@ -62,9 +62,9 @@ public class SPNValidityGrid {
 		
 		
 		if(filterMap !=null && filterMap.size()>0) {
-			List<Bson> andList = new ArrayList<>();
-			for(String key : filterMap.keySet()) {
-				String val = filterMap.get(key);
+			final List<Bson> andList = new ArrayList<>();
+			for(final String key : filterMap.keySet()) {
+				final String val = filterMap.get(key);
 				andList.add(regex(key, val, "i"));
 			}
 			if(andList.size()>0) {
@@ -72,8 +72,10 @@ public class SPNValidityGrid {
 			}
 		}
 		
-		long millisec = days*factorDay2Milli;
-		pipeline.add(match(Filters.lte("diff", millisec)));
+		if (days > 0) {
+			final long millisec = days * factorDay2Milli;
+			pipeline.add(match(Filters.lte("diff", millisec)));
+		}
 		
 		if(orderByField==null || orderByField.trim().length()==0) {
 			orderByField="diff";
@@ -88,13 +90,13 @@ public class SPNValidityGrid {
 		pipeline.add(Aggregates.skip(pgSZ*pgNo));
 		pipeline.add(Aggregates.limit(pgSZ));
 				
-		MongoDatabase mongo = mongoTemplate.getDb();
-		AggregateIterable<Document> rec = mongo.getCollection(collectionName).aggregate(
+		final MongoDatabase mongo = mongoTemplate.getDb();
+		final AggregateIterable<Document> rec = mongo.getCollection(collectionName).aggregate(
 				pipeline
 			)
 		;
 		rec.cursor().forEachRemaining(doc->{
-			Map<String, String> tmp = new HashMap<>();
+			final Map<String, String> tmp = new HashMap<>();
 			tmp.put("supplierPartNumber", doc.getString("supplierPartNumber"));
 			tmp.put("materialGroupL4", doc.getString("materialGroupL4"));
 			tmp.put("materialShortDesc", doc.getString("materialShortDesc"));
@@ -102,8 +104,8 @@ public class SPNValidityGrid {
 			tmp.put("priceAgreementReferenceName", doc.getString("priceAgreementReferenceName"));
 			tmp.put("catalogueType", doc.getString("catalogueType"));
 			tmp.put("supplierName", doc.getString("supplierName"));
-			long timeInMillis=doc.getLong("diff");
-			int day = (int) (timeInMillis/factorDay2Milli);
+			final long timeInMillis=doc.getLong("diff");
+			final int day = (int) (timeInMillis/factorDay2Milli);
 			tmp.put("day", day+"");
 			retList.add(tmp);
 		});
@@ -113,17 +115,17 @@ public class SPNValidityGrid {
 
 	}
 	
-	public int getSPNValidityGridCOUNT(int days, Map<String, String> filterMap){
+	public int getSPNValidityGridCOUNT(final int days, final Map<String, String> filterMap){
 		
-		String collectionName = Constants.PRICE_AGREEMENT_SPN_DETAILS_COLLECTION_NAME;
+		final String collectionName = Constants.PRICE_AGREEMENT_SPN_DETAILS_COLLECTION_NAME;
 
-		List<Bson> pipeline = new ArrayList<>();
+		final List<Bson> pipeline = new ArrayList<>();
 
-		long factorDay2Milli = 1000*60*60*24;
+		final long factorDay2Milli = 1000*60*60*24;
 		
-		Logger logger = LoggerFactory.getLogger(getClass());
+		final Logger logger = LoggerFactory.getLogger(getClass());
 
-		String bson1 = " {$project:{ "
+		final String bson1 = " {$project:{ "
 				+ "_id: 0,"
 				+ "supplierPartNumber:1,"
 				+ "materialGroupL4:1,"
@@ -140,9 +142,9 @@ public class SPNValidityGrid {
 		
 		
 		if(filterMap !=null && filterMap.size()>0) {
-			List<Bson> andList = new ArrayList<>();
-			for(String key : filterMap.keySet()) {
-				String val = filterMap.get(key);
+			final List<Bson> andList = new ArrayList<>();
+			for(final String key : filterMap.keySet()) {
+				final String val = filterMap.get(key);
 				andList.add(regex(key, val, "i"));
 			}
 			if(andList.size()>0) {
@@ -150,8 +152,10 @@ public class SPNValidityGrid {
 			}
 		}
 		
-		long millisec = days*factorDay2Milli;
-		pipeline.add(match(Filters.lte("diff", millisec)));
+		if (days > 0) {
+			final long millisec = days * factorDay2Milli;
+			pipeline.add(match(Filters.lte("diff", millisec)));
+		}
 		
 //		if(orderByField==null || orderByField.trim().length()==0) {
 //			orderByField="diff";

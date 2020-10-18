@@ -1,13 +1,12 @@
 package com.vf.ana;
 
-import static com.mongodb.client.model.Aggregates.group;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Filters.and;
+import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.gte;
 import static com.mongodb.client.model.Filters.in;
 import static com.mongodb.client.model.Filters.lte;
 import static com.mongodb.client.model.Filters.or;
-import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.regex;
 
 import java.time.LocalDate;
@@ -32,11 +31,8 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Accumulators;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Projections;
-import com.mongodb.client.model.UnwindOptions;
 
 @Repository
 public class KPIFilterAndGroupByHandler {
@@ -50,10 +46,10 @@ public class KPIFilterAndGroupByHandler {
 	MongoTemplate mongoTemplate;
 	
 
-	private String dateStr = "invoiceDateyymm : {$dateToString: { format: '%Y-%m', date: '$invoiceDate' }}, "
+	private final String dateStr = "invoiceDateyymm : {$dateToString: { format: '%Y-%m', date: '$invoiceDate' }}, "
 			+ "purchaseOrderCreationDateyymm : {$dateToString: { format: '%Y-%m', date: '$purchaseOrderCreationDate' }}";
 
-	private String firstProject = "{$project:{supplierPartNumber:1, " + "tradingModel:1, " + "supplierId: 1, "
+	private final String firstProject = "{$project:{supplierPartNumber:1, " + "tradingModel:1, " + "supplierId: 1, "
 			+ "outlineAgreementNumber: 1, " + "catalogueType:1, " + "opcoCode:1, " + "priceAgreementStatus:1, "
 			+ "parentSupplierId:1, " + "validFromDate:1, " + "validToDate:1, " + "materialGroupL4:1, "
 			+ "priceAgreementReferenceName:1,"
@@ -67,7 +63,7 @@ public class KPIFilterAndGroupByHandler {
 	String dateStr2 = "validFromDatemm : {$dateToString: { format: '%Y-%m', date: '$validFromDate' }}, "
 			+ "validToDateyymm : {$dateToString: { format: '%Y-%m', date: '$validToDate' }}";
 
-	private String firstProject2 = "{$project:{supplierPartNumber:1, " + "tradingModel:1, " + "supplierId: 1, "
+	private final String firstProject2 = "{$project:{supplierPartNumber:1, " + "tradingModel:1, " + "supplierId: 1, "
 			+ "outlineAgreementNumber: 1, " + "catalogueType:1, " + "opcoCode:1, " + "priceAgreementStatus:1, "
 			+ "parentSupplierId:1, " + "validFromDate:1, " + "validToDate:1, " + "materialGroupL4:1, "
 			+ "priceAgreementReferenceName:1,"
@@ -78,8 +74,8 @@ public class KPIFilterAndGroupByHandler {
 			+ "purchaseOrderCreationDate:1," + "invoiceUnitPriceAsPerTc: { $ifNull: ['$invoiceUnitPriceAsPerTc', 1 ] },"
 			+ dateStr2 + "}}";
 
-	public Map<String, Map<String, Double>> getDataByProp(String grpByPropName, String orderByKPI, int dir,
-			Map<String, List<String>> filter, int pgNum, List<String> dates, String searchStr) {
+	public Map<String, Map<String, Double>> getDataByProp(final String grpByPropName, final String orderByKPI, final int dir,
+			final Map<String, List<String>> filter, final int pgNum, final List<String> dates, final String searchStr) {
 
 		if (orderByKPI == null || orderByKPI.equalsIgnoreCase(Constants.KPI_ORDER_VALUE))
 			return getTotalOrdersValue(grpByPropName, dir, filter, pgNum, dates, null, false, searchStr);
@@ -105,11 +101,14 @@ public class KPIFilterAndGroupByHandler {
 		if (orderByKPI.equalsIgnoreCase(Constants.KPI_VVREMAINING_VALUE))
 			return getTotalVoucherREMAININGValue(grpByPropName, dir, filter, pgNum, dates, null, false, searchStr);
 
+		if (orderByKPI.equalsIgnoreCase(Constants.KPI_VLREC_VALUE))
+			return getTotalLeakageRecoveredValue(grpByPropName, dir, filter, pgNum, dates, null, false, searchStr);
+
 		return null;
 	}
 
-	public int getDataCOUNTByProp(String grpByPropName, String orderByKPI, int dir, Map<String, List<String>> filter,
-			List<String> dates, String searchStr) {
+	public int getDataCOUNTByProp(final String grpByPropName, final String orderByKPI, final int dir, final Map<String, List<String>> filter,
+			final List<String> dates, final String searchStr) {
 
 		if (orderByKPI == null || orderByKPI.equalsIgnoreCase(Constants.KPI_ORDER_VALUE))
 			return getTotalOrdersValueCount(grpByPropName, dir, filter, dates, searchStr);
@@ -135,21 +134,24 @@ public class KPIFilterAndGroupByHandler {
 		if (orderByKPI.equalsIgnoreCase(Constants.KPI_VVREMAINING_VALUE))
 			return getTotalVoucherREMAINING_COUNT(grpByPropName, filter, dates, searchStr);
 
+		if (orderByKPI.equalsIgnoreCase(Constants.KPI_VLREC_VALUE))
+			return getTotalLeakageRecoveredCOUNT(grpByPropName, filter, dates, searchStr);
+
 		return 0;
 	}
 
-	public Map<String, Map<String, Double>> getTotalOrdersValue(String groupByPropName, int dir,
-			Map<String, List<String>> argfilter, int pgNum, List<String> yyyymm,
-			Map<String, Map<String, Double>> retMap, boolean second, String searchStr) {
+	public Map<String, Map<String, Double>> getTotalOrdersValue(final String groupByPropName, final int dir,
+			final Map<String, List<String>> argfilter, final int pgNum, final List<String> yyyymm,
+			Map<String, Map<String, Double>> retMap, final boolean second, final String searchStr) {
 
 		if (retMap == null) {
-			retMap = new LinkedHashMap<String, Map<String, Double>>();
+			retMap = new LinkedHashMap<>();
 		}
 
 		if (retMap.size() == 0 && second)
 			return retMap;
 
-		List<Bson> pipeline = new ArrayList<>();
+		final List<Bson> pipeline = new ArrayList<>();
 
 //		common.printDocs(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline, mongoTemplate);
 		// add already selected filter
@@ -161,7 +163,7 @@ public class KPIFilterAndGroupByHandler {
 		Map<String, List<String>> filter = null;
 
 		if (argfilter != null) {
-			filter = new HashMap<String, List<String>>();
+			filter = new HashMap<>();
 			filter.putAll(argfilter);
 		}
 
@@ -169,7 +171,7 @@ public class KPIFilterAndGroupByHandler {
 
 		if (filter != null) {
 
-			Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
+			final Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
 			if (bfilterClause != null)
 				pipeline.add(bfilterClause);
 		}
@@ -177,7 +179,7 @@ public class KPIFilterAndGroupByHandler {
 //		common.printDocs(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline, mongoTemplate);
 
 		if (!second && searchStr != null && searchStr.trim().length() != 0) {
-			Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
+			final Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
 			pipeline.add(srchBson);
 		}
 
@@ -185,28 +187,28 @@ public class KPIFilterAndGroupByHandler {
 
 		common.setCommonDateFiltersForPOToLimitFutureDate(pipeline);
 
-		Bson firstProjectBson = BasicDBObject.parse(firstProject);
+		final Bson firstProjectBson = BasicDBObject.parse(firstProject);
 		pipeline.add(firstProjectBson);
 
 		// printDocs(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline);
 
 		// add dateFilters
 		if (yyyymm != null && yyyymm.size() > 0) {
-			Bson dateFilter = match(in("purchaseOrderCreationDateyymm", yyyymm));
+			final Bson dateFilter = match(in("purchaseOrderCreationDateyymm", yyyymm));
 			pipeline.add(dateFilter);
 		}
 
-		String projectIV = "{$project : {" + "dim: '$" + groupByPropName + "', "
+		final String projectIV = "{$project : {" + "dim: '$" + groupByPropName + "', "
 				+ "po:{$multiply:[{$divide:['$netPricePOPrice', '$priceUnitPo']}, '$quantityOrderedPurchaseOrder']}, "
 				+ "}}";
-		Bson bPrjOIV = BasicDBObject.parse(projectIV);
+		final Bson bPrjOIV = BasicDBObject.parse(projectIV);
 		pipeline.add(bPrjOIV);
 
 //		printDocs(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline);
 
-		String projectQIV = "{$group:{_id: '$dim' , " + Constants.ORDER_VALUE + ":{$sum:'$po'} " + "}}";
+		final String projectQIV = "{$group:{_id: '$dim' , " + Constants.ORDER_VALUE + ":{$sum:'$po'} " + "}}";
 
-		Bson bPrjOV = BasicDBObject.parse(projectQIV);
+		final Bson bPrjOV = BasicDBObject.parse(projectQIV);
 		pipeline.add(bPrjOV);
 
 //		printDocs(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline);
@@ -217,9 +219,9 @@ public class KPIFilterAndGroupByHandler {
 //			logger.debug("The total count should be {}", count);
 		}
 
-		List<String> kpisV = new ArrayList<String>();
+		final List<String> kpisV = new ArrayList<>();
 		kpisV.add(Constants.ORDER_VALUE);
-		String sortByField = Constants.ORDER_VALUE;
+		final String sortByField = Constants.ORDER_VALUE;
 		common.getResults(pipeline, dir, pgNum, retMap, kpisV, Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME,
 				sortByField, mongoTemplate);
 
@@ -242,6 +244,8 @@ public class KPIFilterAndGroupByHandler {
 //
 			getTotalVoucherREMAININGValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 
+			getTotalLeakageRecoveredValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
 		}
 
 		logger.debug("FINAL    FINAL   OV 3 {}", retMap);
@@ -249,16 +253,16 @@ public class KPIFilterAndGroupByHandler {
 		return retMap;
 	}
 
-	public int getTotalOrdersValueCount(String groupByPropName, int dir, Map<String, List<String>> argfilter,
-			List<String> yyyymm, String searchStr) {
+	public int getTotalOrdersValueCount(final String groupByPropName, final int dir, final Map<String, List<String>> argfilter,
+			final List<String> yyyymm, final String searchStr) {
 
-		List<Bson> pipeline = new ArrayList<>();
+		final List<Bson> pipeline = new ArrayList<>();
 
 		Map<String, List<String>> filter = null;
 
 		if (argfilter != null) {
-			filter = new HashMap<String, List<String>>();
-			for (String key : argfilter.keySet()) {
+			filter = new HashMap<>();
+			for (final String key : argfilter.keySet()) {
 				filter.put(key, argfilter.get(key));
 			}
 		}
@@ -267,68 +271,68 @@ public class KPIFilterAndGroupByHandler {
 
 		if (filter != null) {
 
-			Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
+			final Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
 			if (bfilterClause != null)
 				pipeline.add(bfilterClause);
 		}
 
 		if (searchStr != null && searchStr.trim().length() != 0) {
-			Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
+			final Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
 			pipeline.add(srchBson);
 		}
 
 		common.setCommonDateFiltersForPOToLimitFutureDate(pipeline);
 
-		Bson firstProjectBson = BasicDBObject.parse(firstProject);
+		final Bson firstProjectBson = BasicDBObject.parse(firstProject);
 		pipeline.add(firstProjectBson);
 
 		// printDocs(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline);
 
 		// add dateFilters
 		if (yyyymm != null && yyyymm.size() > 0) {
-			Bson dateFilter = match(in("purchaseOrderCreationDateyymm", yyyymm));
+			final Bson dateFilter = match(in("purchaseOrderCreationDateyymm", yyyymm));
 			pipeline.add(dateFilter);
 		}
 
-		String projectIV = "{$project : {" + "dim: '$" + groupByPropName + "', "
+		final String projectIV = "{$project : {" + "dim: '$" + groupByPropName + "', "
 				+ "po:{$multiply:[{$divide:['$netPricePOPrice', '$priceUnitPo']}, '$quantityOrderedPurchaseOrder']}, "
 				+ "}}";
-		Bson bPrjOIV = BasicDBObject.parse(projectIV);
+		final Bson bPrjOIV = BasicDBObject.parse(projectIV);
 		pipeline.add(bPrjOIV);
 
 //		printDocs(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline);
 
-		String projectQIV = "{$group:{_id: '$dim' , " + Constants.ORDER_VALUE + ":{$sum:'$po'} " + "}}";
+		final String projectQIV = "{$group:{_id: '$dim' , " + Constants.ORDER_VALUE + ":{$sum:'$po'} " + "}}";
 
-		Bson bPrjOV = BasicDBObject.parse(projectQIV);
+		final Bson bPrjOV = BasicDBObject.parse(projectQIV);
 		pipeline.add(bPrjOV);
 
 //		printDocs(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline);
 
-		int count = common.getCount(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline, mongoTemplate);
+		final int count = common.getCount(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline, mongoTemplate);
 		logger.debug("The total count should be {}", count);
 
 		return count;
 
 	}
 
-	public Map<String, Map<String, Double>> getTotalInvoiceValue(String groupByPropName, int dir,
-			Map<String, List<String>> argfilter, int pgNum, List<String> yyyymm,
-			Map<String, Map<String, Double>> retMap, boolean second, String searchStr) {
+	public Map<String, Map<String, Double>> getTotalInvoiceValue(final String groupByPropName, final int dir,
+			final Map<String, List<String>> argfilter, final int pgNum, final List<String> yyyymm,
+			Map<String, Map<String, Double>> retMap, final boolean second, final String searchStr) {
 
 		if (retMap == null) {
-			retMap = new LinkedHashMap<String, Map<String, Double>>();
+			retMap = new LinkedHashMap<>();
 		}
 		if (retMap.size() == 0 && second)
 			return retMap;
 
-		List<Bson> pipeline = new ArrayList<>();
+		final List<Bson> pipeline = new ArrayList<>();
 
 		Map<String, List<String>> filter = null;
 
 		if (argfilter != null) {
-			filter = new HashMap<String, List<String>>();
-			for (String key : argfilter.keySet()) {
+			filter = new HashMap<>();
+			for (final String key : argfilter.keySet()) {
 				filter.put(key, argfilter.get(key));
 			}
 		}
@@ -341,49 +345,49 @@ public class KPIFilterAndGroupByHandler {
 
 		if (filter != null) {
 
-			Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
+			final Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
 			if (bfilterClause != null)
 				pipeline.add(bfilterClause);
 		}
 
 		if (!second && searchStr != null && searchStr.trim().length() != 0) {
-			Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
+			final Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
 			pipeline.add(srchBson);
 		}
 
 		common.setCommonDateFiltersForPOToLimitFutureDate(pipeline);// tackle wayward dates
 
-		Bson firstProjectBson = BasicDBObject.parse(firstProject);
+		final Bson firstProjectBson = BasicDBObject.parse(firstProject);
 		pipeline.add(firstProjectBson);
 
 		// add dateFilters
 		if (yyyymm != null && yyyymm.size() > 0) {
-			Bson dateFilter = match(in("invoiceDateyymm", yyyymm));
+			final Bson dateFilter = match(in("invoiceDateyymm", yyyymm));
 			pipeline.add(dateFilter);
 		}
 
-		String projectIV = "{$project : {" + "dim: '$" + groupByPropName + "', "
+		final String projectIV = "{$project : {" + "dim: '$" + groupByPropName + "', "
 				+ "iv:{$multiply:[{$divide:['$invoiceUnitPriceAsPerTc', '$priceUnitPo']}, '$invoiceQuantity']}," + "}}";
-		Bson bPrjOIV = BasicDBObject.parse(projectIV);
+		final Bson bPrjOIV = BasicDBObject.parse(projectIV);
 		pipeline.add(bPrjOIV);
 
 //		printDocs(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline);
 
-		String projectQIV = "{$group:{_id: '$dim' , " + Constants.INVOICE_VALUE + ":{$sum:'$iv'} }}";
+		final String projectQIV = "{$group:{_id: '$dim' , " + Constants.INVOICE_VALUE + ":{$sum:'$iv'} }}";
 
-		Bson bPrjOV = BasicDBObject.parse(projectQIV);
+		final Bson bPrjOV = BasicDBObject.parse(projectQIV);
 		pipeline.add(bPrjOV);
 
 //		printDocs(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline);
 
 		if (!second) {
-			int count = common.getCount(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline, mongoTemplate);
+			final int count = common.getCount(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline, mongoTemplate);
 			logger.debug("The total count should be {}", count);
 		}
 
-		List<String> kpisV = new ArrayList<String>();
+		final List<String> kpisV = new ArrayList<>();
 		kpisV.add(Constants.INVOICE_VALUE);
-		String sortByField = Constants.INVOICE_VALUE;
+		final String sortByField = Constants.INVOICE_VALUE;
 		common.getResults(pipeline, dir, pgNum, retMap, kpisV, Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME,
 				sortByField, mongoTemplate);
 
@@ -406,6 +410,8 @@ public class KPIFilterAndGroupByHandler {
 
 			getTotalVoucherREMAININGValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 
+			getTotalLeakageRecoveredValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
 		}
 
 		logger.debug("FINAL    FINAL   OV 2 {}", retMap);
@@ -413,16 +419,16 @@ public class KPIFilterAndGroupByHandler {
 		return retMap;
 	}
 
-	public int getTotalInvoiceValueCount(String groupByPropName, int dir, Map<String, List<String>> argfilter,
-			List<String> yyyymm, String searchStr) {
+	public int getTotalInvoiceValueCount(final String groupByPropName, final int dir, final Map<String, List<String>> argfilter,
+			final List<String> yyyymm, final String searchStr) {
 
-		List<Bson> pipeline = new ArrayList<>();
+		final List<Bson> pipeline = new ArrayList<>();
 
 		Map<String, List<String>> filter = null;
 
 		if (argfilter != null) {
-			filter = new HashMap<String, List<String>>();
-			for (String key : argfilter.keySet()) {
+			filter = new HashMap<>();
+			for (final String key : argfilter.keySet()) {
 				filter.put(key, argfilter.get(key));
 			}
 		}
@@ -431,66 +437,66 @@ public class KPIFilterAndGroupByHandler {
 
 		if (filter != null) {
 
-			Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
+			final Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
 			if (bfilterClause != null)
 				pipeline.add(bfilterClause);
 		}
 
 		if (searchStr != null && searchStr.trim().length() != 0) {
-			Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
+			final Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
 			pipeline.add(srchBson);
 		}
 
 		common.setCommonDateFiltersForPOToLimitFutureDate(pipeline);// tackle wayward dates
 
-		Bson firstProjectBson = BasicDBObject.parse(firstProject);
+		final Bson firstProjectBson = BasicDBObject.parse(firstProject);
 		pipeline.add(firstProjectBson);
 
 		// add dateFilters
 		if (yyyymm != null && yyyymm.size() > 0) {
-			Bson dateFilter = match(in("invoiceDateyymm", yyyymm));
+			final Bson dateFilter = match(in("invoiceDateyymm", yyyymm));
 			pipeline.add(dateFilter);
 		}
 
-		String projectIV = "{$project : {" + "dim: '$" + groupByPropName + "', "
+		final String projectIV = "{$project : {" + "dim: '$" + groupByPropName + "', "
 				+ "iv:{$multiply:[{$divide:['$invoiceUnitPriceAsPerTc', '$priceUnitPo']}, '$invoiceQuantity']}," + "}}";
-		Bson bPrjOIV = BasicDBObject.parse(projectIV);
+		final Bson bPrjOIV = BasicDBObject.parse(projectIV);
 		pipeline.add(bPrjOIV);
 
 //		printDocs(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline);
 
-		String projectQIV = "{$group:{_id: '$dim' , " + Constants.INVOICE_VALUE + ":{$sum:'$iv'} }}";
+		final String projectQIV = "{$group:{_id: '$dim' , " + Constants.INVOICE_VALUE + ":{$sum:'$iv'} }}";
 
-		Bson bPrjOV = BasicDBObject.parse(projectQIV);
+		final Bson bPrjOV = BasicDBObject.parse(projectQIV);
 		pipeline.add(bPrjOV);
 
 //		printDocs(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline);
 
-		int count = common.getCount(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline, mongoTemplate);
+		final int count = common.getCount(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline, mongoTemplate);
 		logger.debug("The total count should be {}", count);
 
 		return count;
 
 	}
 
-	public Map<String, Map<String, Double>> getTotalOrdersIssued(String groupByPropName, int dir,
-			Map<String, List<String>> argfilter, int pgNum, List<String> yyyymm,
-			Map<String, Map<String, Double>> retMap, boolean second, String searchStr) {
+	public Map<String, Map<String, Double>> getTotalOrdersIssued(final String groupByPropName, final int dir,
+			final Map<String, List<String>> argfilter, final int pgNum, final List<String> yyyymm,
+			Map<String, Map<String, Double>> retMap, final boolean second, final String searchStr) {
 
 		if (retMap == null) {
-			retMap = new LinkedHashMap<String, Map<String, Double>>();
+			retMap = new LinkedHashMap<>();
 		}
 
 		if (retMap.size() == 0 && second)
 			return retMap;
 
-		List<Bson> pipeline = new ArrayList<>();
+		final List<Bson> pipeline = new ArrayList<>();
 
 		Map<String, List<String>> filter = null;
 
 		if (argfilter != null) {
-			filter = new HashMap<String, List<String>>();
-			for (String key : argfilter.keySet()) {
+			filter = new HashMap<>();
+			for (final String key : argfilter.keySet()) {
 				filter.put(key, argfilter.get(key));
 			}
 		}
@@ -499,13 +505,13 @@ public class KPIFilterAndGroupByHandler {
 
 		if (filter != null) {
 
-			Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
+			final Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
 			if (bfilterClause != null)
 				pipeline.add(bfilterClause);
 		}
 
 		if (!second && searchStr != null && searchStr.trim().length() != 0) {
-			Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
+			final Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
 			pipeline.add(srchBson);
 		}
 
@@ -513,12 +519,12 @@ public class KPIFilterAndGroupByHandler {
 
 //		printDocs(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline);
 
-		Bson firstProjectBson = BasicDBObject.parse(firstProject);
+		final Bson firstProjectBson = BasicDBObject.parse(firstProject);
 		pipeline.add(firstProjectBson);
 
 		// add dateFilters
 		if (yyyymm != null && yyyymm.size() > 0) {
-			Bson dateFilter = match(in("purchaseOrderCreationDateyymm", yyyymm));
+			final Bson dateFilter = match(in("purchaseOrderCreationDateyymm", yyyymm));
 			pipeline.add(dateFilter);
 		}
 
@@ -529,24 +535,24 @@ public class KPIFilterAndGroupByHandler {
 
 //		common.printDocs(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline, mongoTemplate);
 
-		String projectPOIss = "{$group:{_id:{dim: '$" + groupByPropName + "', po:'$purchaseOrderNumberOne' }, "
+		final String projectPOIss = "{$group:{_id:{dim: '$" + groupByPropName + "', po:'$purchaseOrderNumberOne' }, "
 				+ Constants.NUMBER_OF_ORDERS + ":{$sum:1} }}";
-		Bson bPrjOIss = BasicDBObject.parse(projectPOIss);
+		final Bson bPrjOIss = BasicDBObject.parse(projectPOIss);
 		pipeline.add(bPrjOIss);
 
-		String projectQIss = "{$group:{_id: '$_id.dim' , " + Constants.NUMBER_OF_ORDERS + ":{$sum:1}}} ";
+		final String projectQIss = "{$group:{_id: '$_id.dim' , " + Constants.NUMBER_OF_ORDERS + ":{$sum:1}}} ";
 
 		System.out.println(projectQIss);
-		Bson bPrjPOIss = BasicDBObject.parse(projectQIss);
+		final Bson bPrjPOIss = BasicDBObject.parse(projectQIss);
 		pipeline.add(bPrjPOIss);
 
 //		printDocs(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline);
 		if (!second) {
-			int count = common.getCount(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline, mongoTemplate);
+			final int count = common.getCount(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline, mongoTemplate);
 			logger.debug("The total count should be {}", count);
 		}
 
-		List<String> kpisIss = new ArrayList<String>();
+		final List<String> kpisIss = new ArrayList<>();
 		kpisIss.add(Constants.NUMBER_OF_ORDERS);
 		common.getResults(pipeline, dir, pgNum, retMap, kpisIss, Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME,
 				Constants.NUMBER_OF_ORDERS, mongoTemplate);
@@ -566,22 +572,25 @@ public class KPIFilterAndGroupByHandler {
 
 			getTotalVoucherREMAININGValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 
+			getTotalLeakageRecoveredValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
+
 		}
 
 		logger.debug("FINAL    FINAL   OISS 3 {}", retMap);
 		return retMap;
 	}
 
-	public int getTotalOrdersIssuedCount(String groupByPropName, int dir, Map<String, List<String>> argfilter,
-			List<String> yyyymm, String searchStr) {
+	public int getTotalOrdersIssuedCount(final String groupByPropName, final int dir, final Map<String, List<String>> argfilter,
+			final List<String> yyyymm, final String searchStr) {
 
-		List<Bson> pipeline = new ArrayList<>();
+		final List<Bson> pipeline = new ArrayList<>();
 
 		Map<String, List<String>> filter = null;
 
 		if (argfilter != null) {
-			filter = new HashMap<String, List<String>>();
-			for (String key : argfilter.keySet()) {
+			filter = new HashMap<>();
+			for (final String key : argfilter.keySet()) {
 				filter.put(key, argfilter.get(key));
 			}
 		}
@@ -590,13 +599,13 @@ public class KPIFilterAndGroupByHandler {
 
 		if (filter != null) {
 
-			Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
+			final Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
 			if (bfilterClause != null)
 				pipeline.add(bfilterClause);
 		}
 
 		if (searchStr != null && searchStr.trim().length() != 0) {
-			Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
+			final Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
 			pipeline.add(srchBson);
 		}
 
@@ -604,55 +613,55 @@ public class KPIFilterAndGroupByHandler {
 
 //		printDocs(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline);
 
-		Bson firstProjectBson = BasicDBObject.parse(firstProject);
+		final Bson firstProjectBson = BasicDBObject.parse(firstProject);
 		pipeline.add(firstProjectBson);
 
 		// add dateFilters
 		if (yyyymm != null && yyyymm.size() > 0) {
-			Bson dateFilter = match(in("purchaseOrderCreationDateyymm", yyyymm));
+			final Bson dateFilter = match(in("purchaseOrderCreationDateyymm", yyyymm));
 			pipeline.add(dateFilter);
 		}
 
 //		printDocs(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline);
 
-		String projectPOIss = "{$group:{_id:{dim: '$" + groupByPropName + "', po:'$purchaseOrderNumberOne' }, "
+		final String projectPOIss = "{$group:{_id:{dim: '$" + groupByPropName + "', po:'$purchaseOrderNumberOne' }, "
 				+ Constants.NUMBER_OF_ORDERS + ":{$sum:1} }}";
-		Bson bPrjOIss = BasicDBObject.parse(projectPOIss);
+		final Bson bPrjOIss = BasicDBObject.parse(projectPOIss);
 		pipeline.add(bPrjOIss);
 
-		String projectQIss = "{$group:{_id: '$_id.dim' , " + Constants.NUMBER_OF_ORDERS + ":{$sum:1}}} ";
+		final String projectQIss = "{$group:{_id: '$_id.dim' , " + Constants.NUMBER_OF_ORDERS + ":{$sum:1}}} ";
 
 		System.out.println(projectQIss);
-		Bson bPrjPOIss = BasicDBObject.parse(projectQIss);
+		final Bson bPrjPOIss = BasicDBObject.parse(projectQIss);
 		pipeline.add(bPrjPOIss);
 
 //		printDocs(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline);
-		int count = common.getCount(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline, mongoTemplate);
+		final int count = common.getCount(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline, mongoTemplate);
 		logger.debug("The total count should be {}", count);
 		return count;
 
 	}
 
-	public Map<String, Map<String, Double>> getTotalActivePAs(String groupByPropName, int dir,
-			Map<String, List<String>> argfilter, int pgNum, List<String> yyyymm,
-			Map<String, Map<String, Double>> retMap, boolean second, String searchStr) {
+	public Map<String, Map<String, Double>> getTotalActivePAs(final String groupByPropName, final int dir,
+			final Map<String, List<String>> argfilter, final int pgNum, final List<String> yyyymm,
+			Map<String, Map<String, Double>> retMap, final boolean second, final String searchStr) {
 
-		String collection = Constants.PRICE_AGREEMENT_SPN_DETAILS_COLLECTION_NAME;
+		final String collection = Constants.PRICE_AGREEMENT_SPN_DETAILS_COLLECTION_NAME;
 
 		if (retMap == null) {
-			retMap = new LinkedHashMap<String, Map<String, Double>>();
+			retMap = new LinkedHashMap<>();
 		}
 
 		if (retMap.size() == 0 && second)
 			return retMap;
 
-		List<Bson> pipeline = new ArrayList<>();
+		final List<Bson> pipeline = new ArrayList<>();
 
 		Map<String, List<String>> filter = null;
 
 		if (argfilter != null) {
-			filter = new HashMap<String, List<String>>();
-			for (String key : argfilter.keySet()) {
+			filter = new HashMap<>();
+			for (final String key : argfilter.keySet()) {
 				filter.put(key, argfilter.get(key));
 			}
 		}
@@ -661,7 +670,7 @@ public class KPIFilterAndGroupByHandler {
 
 		if (filter == null) {
 
-			filter = new HashMap<String, List<String>>();
+			filter = new HashMap<>();
 		}
 		List<String> activeClause = filter.get(Constants.PROP_PRICEAGG_STATUS);
 		if (activeClause == null)
@@ -675,30 +684,30 @@ public class KPIFilterAndGroupByHandler {
 		// Add filter
 		if (filter != null) {
 
-			Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
+			final Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
 			if (bfilterClause != null)
 				pipeline.add(bfilterClause);
 		}
 
 		// Add date
 		if (yyyymm != null && yyyymm.size() > 0) {
-			List<Bson> dateFilterList = new ArrayList<>();
-			for (String ym : yyyymm) {
-				LocalDate dt = LocalDate.parse(ym + "-01", DateTimeFormatter.ISO_DATE);
-				Bson df = and(lte("validFromDate", dt), gte("validToDate", dt));
+			final List<Bson> dateFilterList = new ArrayList<>();
+			for (final String ym : yyyymm) {
+				final LocalDate dt = LocalDate.parse(ym + "-01", DateTimeFormatter.ISO_DATE);
+				final Bson df = and(lte("validFromDate", dt), gte("validToDate", dt));
 				dateFilterList.add(df);
 			}
-			Bson orDf = or(dateFilterList);
+			final Bson orDf = or(dateFilterList);
 			pipeline.add(match(orDf));
 		}
 
 		if (!second && searchStr != null && searchStr.trim().length() != 0) {
-			Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
+			final Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
 			pipeline.add(srchBson);
 		}
 
 		// Project whatever required and converted date fields
-		Bson firstProjectBson = BasicDBObject.parse(firstProject2);
+		final Bson firstProjectBson = BasicDBObject.parse(firstProject2);
 		pipeline.add(firstProjectBson);
 
 		// add already selected items if there
@@ -709,14 +718,14 @@ public class KPIFilterAndGroupByHandler {
 //		printDocs(collection, pipeline);
 
 		// get distinct prop-spn-opco
-		String projectQ = "{$group:{_id:{dim: '$" + groupByPropName + "', spn:'$supplierPartNumber', oc:'$opcoCode' }, "
+		final String projectQ = "{$group:{_id:{dim: '$" + groupByPropName + "', spn:'$supplierPartNumber', oc:'$opcoCode' }, "
 				+ Constants.ACTIVE_PRICE_AGREEMENT + ":{$sum:1} }}";
-		Bson bPrj = BasicDBObject.parse(projectQ);
+		final Bson bPrj = BasicDBObject.parse(projectQ);
 		pipeline.add(bPrj);
 
 		// get distint spn-opco
-		String aggStr = "{$group:{_id:'$_id.dim', " + Constants.ACTIVE_PRICE_AGREEMENT + ":{$sum:1}}}";
-		Bson bagg = BasicDBObject.parse(aggStr);
+		final String aggStr = "{$group:{_id:'$_id.dim', " + Constants.ACTIVE_PRICE_AGREEMENT + ":{$sum:1}}}";
+		final Bson bagg = BasicDBObject.parse(aggStr);
 		pipeline.add(bagg);
 
 //		printDocs(collection, pipeline);
@@ -726,7 +735,7 @@ public class KPIFilterAndGroupByHandler {
 			logger.debug("The total count should be {}", count);
 		}
 
-		List<String> kpisAPA = new ArrayList<String>();
+		final List<String> kpisAPA = new ArrayList<>();
 		kpisAPA.add(Constants.ACTIVE_PRICE_AGREEMENT);
 		common.getResults(pipeline, dir, pgNum, retMap, kpisAPA, collection, Constants.ACTIVE_PRICE_AGREEMENT, mongoTemplate);
 
@@ -749,6 +758,8 @@ public class KPIFilterAndGroupByHandler {
 
 			getTotalVoucherREMAININGValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 
+			getTotalLeakageRecoveredValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
 
 		}
 
@@ -757,18 +768,18 @@ public class KPIFilterAndGroupByHandler {
 
 	}
 
-	public int getTotalActivePAsCount(String groupByPropName, int dir, Map<String, List<String>> argfilter,
-			List<String> yyyymm, String searchStr) {
+	public int getTotalActivePAsCount(final String groupByPropName, final int dir, final Map<String, List<String>> argfilter,
+			final List<String> yyyymm, final String searchStr) {
 
-		String collection = Constants.PRICE_AGREEMENT_SPN_DETAILS_COLLECTION_NAME;
+		final String collection = Constants.PRICE_AGREEMENT_SPN_DETAILS_COLLECTION_NAME;
 
-		List<Bson> pipeline = new ArrayList<>();
+		final List<Bson> pipeline = new ArrayList<>();
 
 		Map<String, List<String>> filter = null;
 
 		if (argfilter != null) {
-			filter = new HashMap<String, List<String>>();
-			for (String key : argfilter.keySet()) {
+			filter = new HashMap<>();
+			for (final String key : argfilter.keySet()) {
 				filter.put(key, argfilter.get(key));
 			}
 		}
@@ -777,7 +788,7 @@ public class KPIFilterAndGroupByHandler {
 
 		if (filter == null) {
 
-			filter = new HashMap<String, List<String>>();
+			filter = new HashMap<>();
 		}
 		List<String> activeClause = filter.get(Constants.PROP_PRICEAGG_STATUS);
 		if (activeClause == null)
@@ -791,72 +802,72 @@ public class KPIFilterAndGroupByHandler {
 		// Add filter
 		if (filter != null) {
 
-			Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
+			final Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
 			if (bfilterClause != null)
 				pipeline.add(bfilterClause);
 		}
 
 		if (searchStr != null && searchStr.trim().length() != 0) {
-			Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
+			final Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
 			pipeline.add(srchBson);
 		}
 
 		// Add date
 		if (yyyymm != null && yyyymm.size() > 0) {
-			List<Bson> dateFilterList = new ArrayList<>();
-			for (String ym : yyyymm) {
-				LocalDate dt = LocalDate.parse(ym + "-01", DateTimeFormatter.ISO_DATE);
-				Bson df = and(lte("validFromDate", dt), gte("validToDate", dt));
+			final List<Bson> dateFilterList = new ArrayList<>();
+			for (final String ym : yyyymm) {
+				final LocalDate dt = LocalDate.parse(ym + "-01", DateTimeFormatter.ISO_DATE);
+				final Bson df = and(lte("validFromDate", dt), gte("validToDate", dt));
 				dateFilterList.add(df);
 			}
-			Bson orDf = or(dateFilterList);
+			final Bson orDf = or(dateFilterList);
 			pipeline.add(match(orDf));
 		}
 
 		// Project whatever required and converted date fields
-		Bson firstProjectBson = BasicDBObject.parse(firstProject2);
+		final Bson firstProjectBson = BasicDBObject.parse(firstProject2);
 		pipeline.add(firstProjectBson);
 
 //		printDocs(collection, pipeline);
 
 		// get distinct prop-spn-opco
-		String projectQ = "{$group:{_id:{dim: '$" + groupByPropName + "', spn:'$supplierPartNumber', oc:'$opcoCode' }, "
+		final String projectQ = "{$group:{_id:{dim: '$" + groupByPropName + "', spn:'$supplierPartNumber', oc:'$opcoCode' }, "
 				+ Constants.ACTIVE_PRICE_AGREEMENT + ":{$sum:1} }}";
-		Bson bPrj = BasicDBObject.parse(projectQ);
+		final Bson bPrj = BasicDBObject.parse(projectQ);
 		pipeline.add(bPrj);
 
 		// get distint spn-opco
-		String aggStr = "{$group:{_id:'$_id.dim', " + Constants.ACTIVE_PRICE_AGREEMENT + ":{$sum:1}}}";
-		Bson bagg = BasicDBObject.parse(aggStr);
+		final String aggStr = "{$group:{_id:'$_id.dim', " + Constants.ACTIVE_PRICE_AGREEMENT + ":{$sum:1}}}";
+		final Bson bagg = BasicDBObject.parse(aggStr);
 		pipeline.add(bagg);
 
 //		printDocs(collection, pipeline);
-		int count = common.getCount(collection, pipeline, mongoTemplate);
+		final int count = common.getCount(collection, pipeline, mongoTemplate);
 		logger.debug("The total count should be {}", count);
 		return count;
 
 	}
 
-	public Map<String, Map<String, Double>> getTotalActiveItems(String groupByPropName, int dir,
-			Map<String, List<String>> argfilter, int pgNum, List<String> yyyymm,
-			Map<String, Map<String, Double>> retMap, boolean second, String searchStr) {
+	public Map<String, Map<String, Double>> getTotalActiveItems(final String groupByPropName, final int dir,
+			final Map<String, List<String>> argfilter, final int pgNum, final List<String> yyyymm,
+			Map<String, Map<String, Double>> retMap, final boolean second, final String searchStr) {
 
-		String collection = Constants.PRICE_AGREEMENT_SPN_DETAILS_COLLECTION_NAME;
+		final String collection = Constants.PRICE_AGREEMENT_SPN_DETAILS_COLLECTION_NAME;
 
 		if (retMap == null) {
-			retMap = new LinkedHashMap<String, Map<String, Double>>();
+			retMap = new LinkedHashMap<>();
 		}
 
 		if (retMap.size() == 0 && second)
 			return retMap;
 
-		List<Bson> pipeline = new ArrayList<>();
+		final List<Bson> pipeline = new ArrayList<>();
 
 		Map<String, List<String>> filter = null;
 
 		if (argfilter != null) {
-			filter = new HashMap<String, List<String>>();
-			for (String key : argfilter.keySet()) {
+			filter = new HashMap<>();
+			for (final String key : argfilter.keySet()) {
 				filter.put(key, argfilter.get(key));
 			}
 		}
@@ -865,7 +876,7 @@ public class KPIFilterAndGroupByHandler {
 
 		if (filter == null) {
 
-			filter = new HashMap<String, List<String>>();
+			filter = new HashMap<>();
 		}
 		List<String> activeClause = filter.get(Constants.PROP_PRICEAGG_STATUS);
 		if (activeClause == null)
@@ -879,30 +890,30 @@ public class KPIFilterAndGroupByHandler {
 		// Add filter
 		if (filter != null) {
 
-			Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
+			final Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
 			if (bfilterClause != null)
 				pipeline.add(bfilterClause);
 		}
 
 		if (!second && searchStr != null && searchStr.trim().length() != 0) {
-			Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
+			final Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
 			pipeline.add(srchBson);
 		}
 
 		// Add date
 		if (yyyymm != null && yyyymm.size() > 0) {
-			List<Bson> dateFilterList = new ArrayList<>();
-			for (String ym : yyyymm) {
-				LocalDate dt = LocalDate.parse(ym + "-01", DateTimeFormatter.ISO_DATE);
-				Bson df = and(lte("validFromDate", dt), gte("validToDate", dt));
+			final List<Bson> dateFilterList = new ArrayList<>();
+			for (final String ym : yyyymm) {
+				final LocalDate dt = LocalDate.parse(ym + "-01", DateTimeFormatter.ISO_DATE);
+				final Bson df = and(lte("validFromDate", dt), gte("validToDate", dt));
 				dateFilterList.add(df);
 			}
-			Bson orDf = or(dateFilterList);
+			final Bson orDf = or(dateFilterList);
 			pipeline.add(match(orDf));
 		}
 
 		// Project whatever required and converted date fields
-		Bson firstProjectBson = BasicDBObject.parse(firstProject2);
+		final Bson firstProjectBson = BasicDBObject.parse(firstProject2);
 		pipeline.add(firstProjectBson);
 
 		// add already selected items if there
@@ -913,23 +924,23 @@ public class KPIFilterAndGroupByHandler {
 //		printDocs(collection, pipeline);
 
 		// get distinct prop-spn
-		String projectQ = "{$group:{_id:{dim: '$" + groupByPropName + "', spn:'$supplierPartNumber' }, "
+		final String projectQ = "{$group:{_id:{dim: '$" + groupByPropName + "', spn:'$supplierPartNumber' }, "
 				+ Constants.ACTIVE_ITEMS + ":{$sum:1} }}";
-		Bson bPrj = BasicDBObject.parse(projectQ);
+		final Bson bPrj = BasicDBObject.parse(projectQ);
 		pipeline.add(bPrj);
 
 		// get distint spn-opco
-		String aggStr = "{$group:{_id:'$_id.dim', " + Constants.ACTIVE_ITEMS + ":{$sum:1}}}";
-		Bson bagg = BasicDBObject.parse(aggStr);
+		final String aggStr = "{$group:{_id:'$_id.dim', " + Constants.ACTIVE_ITEMS + ":{$sum:1}}}";
+		final Bson bagg = BasicDBObject.parse(aggStr);
 		pipeline.add(bagg);
 
 //		printDocs(collection, pipeline);
 		if (!second) {
-			int count = common.getCount(collection, pipeline, mongoTemplate);
+			final int count = common.getCount(collection, pipeline, mongoTemplate);
 			logger.debug("The total count should be {}", count);
 		}
 
-		List<String> kpisAPA = new ArrayList<String>();
+		final List<String> kpisAPA = new ArrayList<>();
 		kpisAPA.add(Constants.ACTIVE_ITEMS);
 		common.getResults(pipeline, dir, pgNum, retMap, kpisAPA, collection, Constants.ACTIVE_ITEMS, mongoTemplate);
 
@@ -952,6 +963,7 @@ public class KPIFilterAndGroupByHandler {
 
 			getTotalVoucherREMAININGValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 
+			getTotalLeakageRecoveredValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 
 		}
 
@@ -960,18 +972,18 @@ public class KPIFilterAndGroupByHandler {
 
 	}
 
-	public int getTotalActiveItemsCount(String groupByPropName, int dir, Map<String, List<String>> argfilter,
-			List<String> yyyymm, String searchStr) {
+	public int getTotalActiveItemsCount(final String groupByPropName, final int dir, final Map<String, List<String>> argfilter,
+			final List<String> yyyymm, final String searchStr) {
 
-		String collection = Constants.PRICE_AGREEMENT_SPN_DETAILS_COLLECTION_NAME;
+		final String collection = Constants.PRICE_AGREEMENT_SPN_DETAILS_COLLECTION_NAME;
 
-		List<Bson> pipeline = new ArrayList<>();
+		final List<Bson> pipeline = new ArrayList<>();
 
 		Map<String, List<String>> filter = null;
 
 		if (argfilter != null) {
-			filter = new HashMap<String, List<String>>();
-			for (String key : argfilter.keySet()) {
+			filter = new HashMap<>();
+			for (final String key : argfilter.keySet()) {
 				filter.put(key, argfilter.get(key));
 			}
 		}
@@ -980,7 +992,7 @@ public class KPIFilterAndGroupByHandler {
 
 		if (filter == null) {
 
-			filter = new HashMap<String, List<String>>();
+			filter = new HashMap<>();
 		}
 		List<String> activeClause = filter.get(Constants.PROP_PRICEAGG_STATUS);
 		if (activeClause == null)
@@ -994,66 +1006,66 @@ public class KPIFilterAndGroupByHandler {
 		// Add filter
 		if (filter != null) {
 
-			Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
+			final Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
 			if (bfilterClause != null)
 				pipeline.add(bfilterClause);
 		}
 
 		if (searchStr != null && searchStr.trim().length() != 0) {
-			Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
+			final Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
 			pipeline.add(srchBson);
 		}
 
 		// Add date
 		if (yyyymm != null && yyyymm.size() > 0) {
-			List<Bson> dateFilterList = new ArrayList<>();
-			for (String ym : yyyymm) {
-				LocalDate dt = LocalDate.parse(ym + "-01", DateTimeFormatter.ISO_DATE);
-				Bson df = and(lte("validFromDate", dt), gte("validToDate", dt));
+			final List<Bson> dateFilterList = new ArrayList<>();
+			for (final String ym : yyyymm) {
+				final LocalDate dt = LocalDate.parse(ym + "-01", DateTimeFormatter.ISO_DATE);
+				final Bson df = and(lte("validFromDate", dt), gte("validToDate", dt));
 				dateFilterList.add(df);
 			}
-			Bson orDf = or(dateFilterList);
+			final Bson orDf = or(dateFilterList);
 			pipeline.add(match(orDf));
 		}
 
 		// Project whatever required and converted date fields
-		Bson firstProjectBson = BasicDBObject.parse(firstProject2);
+		final Bson firstProjectBson = BasicDBObject.parse(firstProject2);
 		pipeline.add(firstProjectBson);
 
 		// get distinct prop-spn
-		String projectQ = "{$group:{_id:{dim: '$" + groupByPropName + "', spn:'$supplierPartNumber' }, "
+		final String projectQ = "{$group:{_id:{dim: '$" + groupByPropName + "', spn:'$supplierPartNumber' }, "
 				+ Constants.ACTIVE_ITEMS + ":{$sum:1} }}";
-		Bson bPrj = BasicDBObject.parse(projectQ);
+		final Bson bPrj = BasicDBObject.parse(projectQ);
 		pipeline.add(bPrj);
 
 		// get distint spn-opco
-		String aggStr = "{$group:{_id:'$_id.dim', " + Constants.ACTIVE_ITEMS + ":{$sum:1}}}";
-		Bson bagg = BasicDBObject.parse(aggStr);
+		final String aggStr = "{$group:{_id:'$_id.dim', " + Constants.ACTIVE_ITEMS + ":{$sum:1}}}";
+		final Bson bagg = BasicDBObject.parse(aggStr);
 		pipeline.add(bagg);
 
-		int count = common.getCount(collection, pipeline, mongoTemplate);
+		final int count = common.getCount(collection, pipeline, mongoTemplate);
 		logger.debug("The total count should be {}", count);
 
 		return count;
 
 	}
 
-	public void aggregateMonthWiseForLastOneYear(String propName, String propVal, Map<String, List<String>> filters) {
+	public void aggregateMonthWiseForLastOneYear(final String propName, final String propVal, final Map<String, List<String>> filters) {
 
-		Map<String, Map<String, Double>> retMap = new TreeMap<>();
+		final Map<String, Map<String, Double>> retMap = new TreeMap<>();
 
 		LocalDate endDate = LocalDate.now();
-		String strEndDate = endDate.format(DateTimeFormatter.ISO_DATE);
-		LocalDate startDate = endDate.minusDays(365);
-		String strStartDate = startDate.format(DateTimeFormatter.ISO_DATE);
+		final String strEndDate = endDate.format(DateTimeFormatter.ISO_DATE);
+		final LocalDate startDate = endDate.minusDays(365);
+		final String strStartDate = startDate.format(DateTimeFormatter.ISO_DATE);
 
-		List<String> months = new ArrayList<String>();
-		List<LocalDate> lastDays = new ArrayList<>();
+		final List<String> months = new ArrayList<>();
+		final List<LocalDate> lastDays = new ArrayList<>();
 
 		while (endDate.compareTo(startDate) >= 0) {
-			String yymm = endDate.format(DateTimeFormatter.ofPattern("YYYY-MM"));
+			final String yymm = endDate.format(DateTimeFormatter.ofPattern("YYYY-MM"));
 			if (propName.equalsIgnoreCase(Constants.PROP_SUPPLIER_PART_NUMBER)) {
-				LocalDate ld = YearMonth.from(endDate).atEndOfMonth();
+				final LocalDate ld = YearMonth.from(endDate).atEndOfMonth();
 //				logger.debug("{} - {} ", endDate , ld);
 				if (!lastDays.contains(ld))
 					lastDays.add(ld);
@@ -1070,7 +1082,7 @@ public class KPIFilterAndGroupByHandler {
 //			logger.debug("LAST DAYS -> {}", lastDays);
 //		}
 
-		List<Bson> pipeLine = new ArrayList<Bson>();
+		final List<Bson> pipeLine = new ArrayList<>();
 
 		if (filters != null) {
 			pipeLine.add(common.formMatchClauseForListFilterBson(filters));
@@ -1100,10 +1112,10 @@ public class KPIFilterAndGroupByHandler {
 
 		ret.cursor().forEachRemaining(doc -> {
 //			logger.debug("1111111111111{}", doc);
-			String key = doc.getString("_id");
+			final String key = doc.getString("_id");
 
 			if (months.contains(key)) {
-				Map<String, Double> hm = new HashMap<>();
+				final Map<String, Double> hm = new HashMap<>();
 				hm.put(Constants.ORDER_VALUE, doc.getDouble("value"));
 				hm.put(Constants.INVOICE_VALUE, 0.00);
 				if (propName.equalsIgnoreCase(Constants.PROP_SUPPLIER_PART_NUMBER))
@@ -1141,7 +1153,7 @@ public class KPIFilterAndGroupByHandler {
 		ret = mongo.getCollection(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME).aggregate(pipeLine);
 
 		ret.cursor().forEachRemaining(doc -> {
-			String key = doc.getString("_id");
+			final String key = doc.getString("_id");
 			if (months.contains(key)) {
 				Map<String, Double> hm = retMap.get(key);
 				if (hm == null) {
@@ -1157,7 +1169,7 @@ public class KPIFilterAndGroupByHandler {
 
 		});
 
-		for (String mn : months) {
+		for (final String mn : months) {
 			Map<String, Double> hm = retMap.get(mn);
 			if (hm == null) {
 				hm = new HashMap<>();
@@ -1173,9 +1185,9 @@ public class KPIFilterAndGroupByHandler {
 //		logger.debug("AFTER ALL!!!! {} ", retMap);
 
 		if (propName.equalsIgnoreCase(Constants.PROP_SUPPLIER_PART_NUMBER)) {
-			for (LocalDate dt : lastDays) {
-				double price = getPriceforSPNbyDate(dt, propName, propVal);
-				String mn = dt.format(DateTimeFormatter.ofPattern("YYYY-MM"));
+			for (final LocalDate dt : lastDays) {
+				final double price = getPriceforSPNbyDate(dt, propName, propVal);
+				final String mn = dt.format(DateTimeFormatter.ofPattern("YYYY-MM"));
 				if (!months.contains(mn))
 					continue;
 //				logger.debug("getting for {} - {}", mn, dt);
@@ -1194,26 +1206,26 @@ public class KPIFilterAndGroupByHandler {
 
 	}
 
-	public Map<String, Map<String, Double>> getTotalLeakageValue(String groupByPropName, int dir,
-			Map<String, List<String>> argfilter, int pgNum, List<String> yyyymm,
-			Map<String, Map<String, Double>> retMap, boolean second, String searchStr) {
+	public Map<String, Map<String, Double>> getTotalLeakageValue(final String groupByPropName, final int dir,
+			final Map<String, List<String>> argfilter, final int pgNum, final List<String> yyyymm,
+			Map<String, Map<String, Double>> retMap, final boolean second, final String searchStr) {
 
 //		String collectionName = "leakage";
 		
-		String collectionName = Constants.VALUE_LEAKAGE_COLLECTION_NAME;
+		final String collectionName = Constants.VALUE_LEAKAGE_COLLECTION_NAME;
 		if (retMap == null) {
-			retMap = new LinkedHashMap<String, Map<String, Double>>();
+			retMap = new LinkedHashMap<>();
 		}
 
 		if (retMap.size() == 0 && second)
 			return retMap;
 
-		List<Bson> pipeline = new ArrayList<>();
+		final List<Bson> pipeline = new ArrayList<>();
 
 		Map<String, List<String>> filter = null;
 
 		if (argfilter != null) {
-			filter = new HashMap<String, List<String>>();
+			filter = new HashMap<>();
 			filter.putAll(argfilter);
 		}
 
@@ -1221,13 +1233,13 @@ public class KPIFilterAndGroupByHandler {
 
 		if (filter != null) {
 
-			Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
+			final Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
 			if (bfilterClause != null)
 				pipeline.add(bfilterClause);
 		}
 
 		if (!second && searchStr != null && searchStr.trim().length() != 0) {
-			Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
+			final Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
 			pipeline.add(srchBson);
 		}
 
@@ -1235,7 +1247,7 @@ public class KPIFilterAndGroupByHandler {
 
 //		setCommonDateFiltersForPOToLimitFutureDate(pipeline);
 
-		Bson firstProjectVLBson = BasicDBObject
+		final Bson firstProjectVLBson = BasicDBObject
 				.parse("" + "{$project: {" + "supplierPartNumber: '$supplierPartNumber', "
 						+ "purchaseOrderNumberOne:'$purchaseOrderNumberOne', " + "tradingModel: '$tradingModel' , "
 						+ "supplierId: '$supplierId' , " + "outlineAgreementNumber: '$outlineAgreementNumber', "
@@ -1251,7 +1263,7 @@ public class KPIFilterAndGroupByHandler {
 
 //		printDocs(collectionName, pipeline);
 
-		Bson secondProjectVLBson = BasicDBObject.parse("{$project : {" + "supplierPartNumber: '$supplierPartNumber', "
+		final Bson secondProjectVLBson = BasicDBObject.parse("{$project : {" + "supplierPartNumber: '$supplierPartNumber', "
 				+ "purchaseOrderNumberOne:'$purchaseOrderNumberOne', " + "tradingModel: '$tradingModel' , "
 				+ "supplierId: '$supplierId' , " + "outlineAgreementNumber: '$outlineAgreementNumber', "
 				+ "catalogueType: '$catalogueType' , " + "opcoCode: '$opcoCode', "
@@ -1266,7 +1278,7 @@ public class KPIFilterAndGroupByHandler {
 
 		// add dateFilters
 		if (yyyymm != null && yyyymm.size() > 0) {
-			Bson dateFilter = match(in("yyyymm", yyyymm));
+			final Bson dateFilter = match(in("yyyymm", yyyymm));
 			pipeline.add(dateFilter);
 		}
 
@@ -1276,13 +1288,13 @@ public class KPIFilterAndGroupByHandler {
 			pipeline.add(match(in(groupByPropName, retMap.keySet())));
 		}
 
-		String projectLV = "{$project : {" + "dim: '$" + groupByPropName + "', " + "lv:'$val', " + "}}";
-		Bson bPrjOIV = BasicDBObject.parse(projectLV);
+		final String projectLV = "{$project : {" + "dim: '$" + groupByPropName + "', " + "lv:'$val', " + "}}";
+		final Bson bPrjOIV = BasicDBObject.parse(projectLV);
 		pipeline.add(bPrjOIV);
 
 //		printDocs(collectionName, pipeline);
 
-		String grpByLV = "{$group:{_id: '$dim' , " + Constants.LEAKAGE_VALUE + ":{$sum:'$lv'} " + "}}";
+		final String grpByLV = "{$group:{_id: '$dim' , " + Constants.LEAKAGE_VALUE + ":{$sum:'$lv'} " + "}}";
 
 		pipeline.add(BasicDBObject.parse(grpByLV));
 
@@ -1296,9 +1308,9 @@ public class KPIFilterAndGroupByHandler {
 //			logger.debug("The total count should be {}", count);
 		}
 
-		List<String> kpisV = new ArrayList<String>();
+		final List<String> kpisV = new ArrayList<>();
 		kpisV.add(Constants.LEAKAGE_VALUE);
-		String sortByField = Constants.LEAKAGE_VALUE;
+		final String sortByField = Constants.LEAKAGE_VALUE;
 		common.getResults(pipeline, dir, pgNum, retMap, kpisV, collectionName, sortByField, mongoTemplate);
 
 		if (!second) {
@@ -1316,6 +1328,7 @@ public class KPIFilterAndGroupByHandler {
 
 			getTotalVoucherREMAININGValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 
+			getTotalLeakageRecoveredValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 
 
 
@@ -1326,17 +1339,17 @@ public class KPIFilterAndGroupByHandler {
 		return retMap;
 	}
 
-	public int getTotalLeakageValueCount(String groupByPropName, int dir, Map<String, List<String>> argfilter,
-			List<String> yyyymm, String searchStr) {
+	public int getTotalLeakageValueCount(final String groupByPropName, final int dir, final Map<String, List<String>> argfilter,
+			final List<String> yyyymm, final String searchStr) {
 
 //		String collectionName = "leakage";
-		String collectionName = Constants.VALUE_LEAKAGE_COLLECTION_NAME;
-		List<Bson> pipeline = new ArrayList<>();
+		final String collectionName = Constants.VALUE_LEAKAGE_COLLECTION_NAME;
+		final List<Bson> pipeline = new ArrayList<>();
 
 		Map<String, List<String>> filter = null;
 
 		if (argfilter != null) {
-			filter = new HashMap<String, List<String>>();
+			filter = new HashMap<>();
 			filter.putAll(argfilter);
 		}
 
@@ -1344,17 +1357,17 @@ public class KPIFilterAndGroupByHandler {
 
 		if (filter != null) {
 
-			Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
+			final Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
 			if (bfilterClause != null)
 				pipeline.add(bfilterClause);
 		}
 
 		if (searchStr != null && searchStr.trim().length() != 0) {
-			Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
+			final Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
 			pipeline.add(srchBson);
 		}
 
-		Bson firstProjectVLBson = BasicDBObject
+		final Bson firstProjectVLBson = BasicDBObject
 				.parse("" + "{$project: {" + "supplierPartNumber: '$supplierPartNumber', "
 						+ "purchaseOrderNumberOne:'$purchaseOrderNumberOne', " + "tradingModel: '$tradingModel' , "
 						+ "supplierId: '$supplierId' , " + "outlineAgreementNumber: '$outlineAgreementNumber', "
@@ -1370,7 +1383,7 @@ public class KPIFilterAndGroupByHandler {
 
 //		printDocs(collectionName, pipeline);
 
-		Bson secondProjectVLBson = BasicDBObject.parse("{$project : {" + "supplierPartNumber: '$supplierPartNumber', "
+		final Bson secondProjectVLBson = BasicDBObject.parse("{$project : {" + "supplierPartNumber: '$supplierPartNumber', "
 				+ "purchaseOrderNumberOne:'$purchaseOrderNumberOne', " + "tradingModel: '$tradingModel' , "
 				+ "supplierId: '$supplierId' , " + "outlineAgreementNumber: '$outlineAgreementNumber', "
 				+ "catalogueType: '$catalogueType' , " + "opcoCode: '$opcoCode', "
@@ -1385,15 +1398,15 @@ public class KPIFilterAndGroupByHandler {
 
 		// add dateFilters
 		if (yyyymm != null && yyyymm.size() > 0) {
-			Bson dateFilter = match(in("yyyymm", yyyymm));
+			final Bson dateFilter = match(in("yyyymm", yyyymm));
 			pipeline.add(dateFilter);
 		}
 
-		String projectLV = "{$project : {" + "dim: '$" + groupByPropName + "', " + "lv:'$val', " + "}}";
-		Bson bPrjOIV = BasicDBObject.parse(projectLV);
+		final String projectLV = "{$project : {" + "dim: '$" + groupByPropName + "', " + "lv:'$val', " + "}}";
+		final Bson bPrjOIV = BasicDBObject.parse(projectLV);
 		pipeline.add(bPrjOIV);
 
-		String grpByLV = "{$group:{_id: '$dim' , " + Constants.LEAKAGE_VALUE + ":{$sum:'$lv'} " + "}}";
+		final String grpByLV = "{$group:{_id: '$dim' , " + Constants.LEAKAGE_VALUE + ":{$sum:'$lv'} " + "}}";
 		pipeline.add(BasicDBObject.parse(grpByLV));
 
 		int count = 0;
@@ -1402,19 +1415,19 @@ public class KPIFilterAndGroupByHandler {
 	}
 
 	
-	public Map<String, Double> getTotalLeakageValueForLastOneYearMonthWise(Map<String, List<String>> argfilter) {
+	public Map<String, Double> getTotalLeakageValueForLastOneYearMonthWise(final Map<String, List<String>> argfilter) {
 
 //		String collectionName = "leakage";
 		
-		String collectionName = Constants.VALUE_LEAKAGE_COLLECTION_NAME;
-		Map<String, Double> retMap = new LinkedHashMap<String, Double>();
+		final String collectionName = Constants.VALUE_LEAKAGE_COLLECTION_NAME;
+		final Map<String, Double> retMap = new LinkedHashMap<>();
 
-		List<Bson> pipeline = new ArrayList<>();
+		final List<Bson> pipeline = new ArrayList<>();
 
 		Map<String, List<String>> filter = null;
 
 		if (argfilter != null) {
-			filter = new HashMap<String, List<String>>();
+			filter = new HashMap<>();
 			filter.putAll(argfilter);
 		}
 
@@ -1422,14 +1435,14 @@ public class KPIFilterAndGroupByHandler {
 
 		if (filter != null) {
 
-			Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
+			final Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
 			if (bfilterClause != null)
 				pipeline.add(bfilterClause);
 		}
 
 
 		
-		Bson firstProjectVLBson = BasicDBObject
+		final Bson firstProjectVLBson = BasicDBObject
 				.parse("" + "{$project: {" + "supplierPartNumber: '$supplierPartNumber', "
 						+ "purchaseOrderNumberOne:'$purchaseOrderNumberOne', " + "tradingModel: '$tradingModel' , "
 						+ "supplierId: '$supplierId' , " + "outlineAgreementNumber: '$outlineAgreementNumber', "
@@ -1445,7 +1458,7 @@ public class KPIFilterAndGroupByHandler {
 
 //		printDocs(collectionName, pipeline);
 
-		Bson secondProjectVLBson = BasicDBObject.parse("{$project : {" + "supplierPartNumber: '$supplierPartNumber', "
+		final Bson secondProjectVLBson = BasicDBObject.parse("{$project : {" + "supplierPartNumber: '$supplierPartNumber', "
 				+ "purchaseOrderNumberOne:'$purchaseOrderNumberOne', " + "tradingModel: '$tradingModel' , "
 				+ "supplierId: '$supplierId' , " + "outlineAgreementNumber: '$outlineAgreementNumber', "
 				+ "catalogueType: '$catalogueType' , " + "opcoCode: '$opcoCode', "
@@ -1457,8 +1470,8 @@ public class KPIFilterAndGroupByHandler {
 		pipeline.add(secondProjectVLBson);
 
 		
-		LocalDate endDate = LocalDate.now();
-		LocalDate startDate = endDate.minusDays(364);
+		final LocalDate endDate = LocalDate.now();
+		final LocalDate startDate = endDate.minusDays(364);
 		
 		match(and(gte("dtt", startDate), lte("dtt", endDate)));
 
@@ -1467,13 +1480,13 @@ public class KPIFilterAndGroupByHandler {
 //		printDocs(collectionName, pipeline);
 
 
-		String projectLV = "{$project : {dim: '$yyyymm', " + "lv:'$val', " + "}}";
-		Bson bPrjOIV = BasicDBObject.parse(projectLV);
+		final String projectLV = "{$project : {dim: '$yyyymm', " + "lv:'$val', " + "}}";
+		final Bson bPrjOIV = BasicDBObject.parse(projectLV);
 		pipeline.add(bPrjOIV);
 
 //		printDocs(collectionName, pipeline);
 
-		String grpByLV = "{$group:{_id: '$dim' , " + Constants.LEAKAGE_VALUE + ":{$sum:'$lv'} " + "}}";
+		final String grpByLV = "{$group:{_id: '$dim' , " + Constants.LEAKAGE_VALUE + ":{$sum:'$lv'} " + "}}";
 
 		pipeline.add(BasicDBObject.parse(grpByLV));
 
@@ -1483,13 +1496,13 @@ public class KPIFilterAndGroupByHandler {
 
 //		printDocs(collectionName, pipeline);
 		
-		MongoDatabase mongo = mongoTemplate.getDb();
-		AggregateIterable<Document> ret = mongo.getCollection(collectionName).aggregate(pipeline);
+		final MongoDatabase mongo = mongoTemplate.getDb();
+		final AggregateIterable<Document> ret = mongo.getCollection(collectionName).aggregate(pipeline);
 
 		
 		ret.cursor().forEachRemaining(doc -> {
 //			logger.debug("!!!!>>>>>>>>>>{}", doc);
-			String key = doc.getString("_id");
+			final String key = doc.getString("_id");
 			retMap.put(key, doc.getDouble(Constants.LEAKAGE_VALUE));
 		});
 
@@ -1498,55 +1511,55 @@ public class KPIFilterAndGroupByHandler {
 
 	
 	
-	private double getPriceforSPNbyDate(LocalDate date, String propName, String propValue) {
+	private double getPriceforSPNbyDate(final LocalDate date, final String propName, final String propValue) {
 		MongoDatabase mongo = mongoTemplate.getDb();
 		mongo = mongoTemplate.getDb();
-		FindIterable<Document> ret = mongo.getCollection(Constants.PRICE_AGREEMENT_SPN_DETAILS_COLLECTION_NAME)
+		final FindIterable<Document> ret = mongo.getCollection(Constants.PRICE_AGREEMENT_SPN_DETAILS_COLLECTION_NAME)
 				.find(and(eq(propName, propValue), gte(Constants.PROP_VALID_TO_DATE, date),
 						lte(Constants.PROP_VALID_FROM_DATE, date)));
 		double num = 0;
 		try {
-			String strDouble = ret.first().getString(Constants.PROP_NET_PRICE);
+			final String strDouble = ret.first().getString(Constants.PROP_NET_PRICE);
 			num = Double.parseDouble(strDouble);
-		} catch (NullPointerException e) {
+		} catch (final NullPointerException e) {
 
-		} catch (Exception ex) {
+		} catch (final Exception ex) {
 			ex.printStackTrace();
 		}
 		return num;
 	}
 
-	public Map<String, Map<String, Double>> getTotalVoucherValue(String groupByPropName, int dir,
-			Map<String, List<String>> argfilter, int pgNum, List<String> yyyymm,
-			Map<String, Map<String, Double>> retMap, boolean second, String searchStr) {
+	public Map<String, Map<String, Double>> getTotalVoucherValue(final String groupByPropName, final int dir,
+			final Map<String, List<String>> argfilter, final int pgNum, final List<String> yyyymm,
+			Map<String, Map<String, Double>> retMap, final boolean second, final String searchStr) {
 
-		String collectionName = Constants.PRICE_AGREEMENT_SPN_DETAILS_COLLECTION_NAME;
+		final String collectionName = Constants.PRICE_AGREEMENT_SPN_DETAILS_COLLECTION_NAME;
 
 		if (retMap == null) {
-			retMap = new LinkedHashMap<String, Map<String, Double>>();
+			retMap = new LinkedHashMap<>();
 		}
 
 		if (retMap.size() == 0 && second)
 			return retMap;
 
-		List<Bson> pipeline = new ArrayList<>();
+		final List<Bson> pipeline = new ArrayList<>();
 
 		Map<String, List<String>> filter = null;
 
 		if (argfilter != null) {
-			filter = new HashMap<String, List<String>>();
+			filter = new HashMap<>();
 			filter.putAll(argfilter);
 		}
 
 		if (filter != null) {
 
-			Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
+			final Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
 			if (bfilterClause != null)
 				pipeline.add(bfilterClause);
 		}
 
 		if (!second && searchStr != null && searchStr.trim().length() != 0) {
-			Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
+			final Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
 			pipeline.add(srchBson);
 		}
 		
@@ -1555,7 +1568,7 @@ public class KPIFilterAndGroupByHandler {
 		}
 
 
-		Bson firstProjectVLBson = BasicDBObject
+		final Bson firstProjectVLBson = BasicDBObject
 				.parse("{$project:{"
 						+ "vouch : '$appliedVoucher'"
 						+ "supplierPartNumber: '$supplierPartNumber', "
@@ -1576,7 +1589,7 @@ public class KPIFilterAndGroupByHandler {
 //		common.printDocs(collectionName, pipeline, mongoTemplate);
 
 		
-		Bson expandVouch = BasicDBObject
+		final Bson expandVouch = BasicDBObject
 				.parse("{$project:{"
 						+ "vouchstdt : '$vouch.startDate'"
 						+ "vouchenddt : '$vouch.endDate'"
@@ -1600,11 +1613,11 @@ public class KPIFilterAndGroupByHandler {
 		// add dateFilters
 		if (yyyymm != null && yyyymm.size() > 0) {
 			
-			List<Bson> andList = new ArrayList<>();
-			for(String ym : yyyymm) {
-				LocalDate firstDay = LocalDate.parse(ym+"-01", DateTimeFormatter.ISO_DATE);
-				String yymm = firstDay.format(DateTimeFormatter.ofPattern("YYYY-MM"));
-				LocalDate lastDay = YearMonth.from(firstDay).atEndOfMonth();
+			final List<Bson> andList = new ArrayList<>();
+			for(final String ym : yyyymm) {
+				final LocalDate firstDay = LocalDate.parse(ym+"-01", DateTimeFormatter.ISO_DATE);
+				final String yymm = firstDay.format(DateTimeFormatter.ofPattern("YYYY-MM"));
+				final LocalDate lastDay = YearMonth.from(firstDay).atEndOfMonth();
 				andList.add(Filters.and(Filters.gte("vouchenddt", firstDay), Filters.lte("vouchstdt", lastDay)));
 			}
 			
@@ -1619,28 +1632,28 @@ public class KPIFilterAndGroupByHandler {
 //		printDocs(collectionName, pipeline);
 
 
-		String grpDist = "{$group:{"
+		final String grpDist = "{$group:{"
 				+ "_id:{dim : '$"+groupByPropName+"', vid: '$vouchid'}, "
 				+"val :{'$max':'$vouchval'} "
 				+ "}}";
-		Bson groupdistinct = BasicDBObject.parse(grpDist);
+		final Bson groupdistinct = BasicDBObject.parse(grpDist);
 		pipeline.add(groupdistinct);
 //		common.printDocs(collectionName, pipeline, mongoTemplate);
 
-		String addUpStr = "{$group:{"
+		final String addUpStr = "{$group:{"
 				+ "_id:'$_id.dim', "
 				+Constants.VOUCHER_TOTAL+":{'$sum':'$val'} "
 				+ "}}";
 		
-		Bson addUp = BasicDBObject.parse(addUpStr);
+		final Bson addUp = BasicDBObject.parse(addUpStr);
 		pipeline.add(addUp);
 
 //		common.printDocs(collectionName, pipeline, mongoTemplate);
 
 
-		List<String> kpisV = new ArrayList<String>();
+		final List<String> kpisV = new ArrayList<>();
 		kpisV.add(Constants.VOUCHER_TOTAL);
-		String sortByField = Constants.VOUCHER_TOTAL;
+		final String sortByField = Constants.VOUCHER_TOTAL;
 		common.getResults(pipeline, dir, pgNum, retMap, kpisV, collectionName, sortByField, mongoTemplate);
 
 		if (!second) {
@@ -1658,6 +1671,7 @@ public class KPIFilterAndGroupByHandler {
 			
 			getTotalVoucherREMAININGValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, second, searchStr);
 
+			getTotalLeakageRecoveredValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 		}
 
 		logger.debug("FINAL    FINAL   LEAKAGE 3 {}", retMap);
@@ -1666,37 +1680,37 @@ public class KPIFilterAndGroupByHandler {
 	}
 
 
-	public Map<String, Map<String, Double>> getTotalVoucherREMAININGValue(String groupByPropName, int dir,
-			Map<String, List<String>> argfilter, int pgNum, List<String> yyyymm,
-			Map<String, Map<String, Double>> retMap, boolean second, String searchStr) {
+	public Map<String, Map<String, Double>> getTotalVoucherREMAININGValue(final String groupByPropName, final int dir,
+			final Map<String, List<String>> argfilter, final int pgNum, final List<String> yyyymm,
+			Map<String, Map<String, Double>> retMap, final boolean second, final String searchStr) {
 
-		String collectionName = Constants.VOUCHER_DETAILS_COLLECTION_NAME;
+		final String collectionName = Constants.VOUCHER_DETAILS_COLLECTION_NAME;
 
 		if (retMap == null) {
-			retMap = new LinkedHashMap<String, Map<String, Double>>();
+			retMap = new LinkedHashMap<>();
 		}
 
 		if (retMap.size() == 0 && second)
 			return retMap;
 
-		List<Bson> pipeline = new ArrayList<>();
+		final List<Bson> pipeline = new ArrayList<>();
 
 		Map<String, List<String>> filter = null;
 
 		if (argfilter != null) {
-			filter = new HashMap<String, List<String>>();
+			filter = new HashMap<>();
 			filter.putAll(argfilter);
 		}
 
 		if (filter != null) {
 
-			Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
+			final Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
 			if (bfilterClause != null)
 				pipeline.add(bfilterClause);
 		}
 
 		if (!second && searchStr != null && searchStr.trim().length() != 0) {
-			Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
+			final Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
 			pipeline.add(srchBson);
 		}
 		
@@ -1705,7 +1719,7 @@ public class KPIFilterAndGroupByHandler {
 		}
 
 
-		Bson firstProjectVLBson = BasicDBObject
+		final Bson firstProjectVLBson = BasicDBObject
 				.parse("{$project:{"
 						+ "_id: 0, "
 						+ "ivu:'$invoiceUnitPriceAsPerTc', "
@@ -1734,7 +1748,7 @@ public class KPIFilterAndGroupByHandler {
 
 		// add dateFilters
 		if (yyyymm != null && yyyymm.size() > 0) {
-			Bson dateFilter = match(in("podtyy", yyyymm));
+			final Bson dateFilter = match(in("podtyy", yyyymm));
 			pipeline.add(dateFilter);
 		}
 
@@ -1757,7 +1771,7 @@ public class KPIFilterAndGroupByHandler {
 		logger.debug("-->>{}", cnt);
 
 		
-		Bson secondProjectVLBson = BasicDBObject.parse("{$group:{_id:'$_id."+groupByPropName+"', "+
+		final Bson secondProjectVLBson = BasicDBObject.parse("{$group:{_id:'$_id."+groupByPropName+"', "+
 		Constants.VOUCHER_REMAINING+":{'$sum':'$rem'}}}");
 		pipeline.add(secondProjectVLBson);
 
@@ -1765,9 +1779,9 @@ public class KPIFilterAndGroupByHandler {
 		cnt = common.getCount(collectionName, pipeline, mongoTemplate);
 		logger.debug("1 -> {}", cnt);
 
-		List<String> kpisV = new ArrayList<String>();
+		final List<String> kpisV = new ArrayList<>();
 		kpisV.add(Constants.VOUCHER_REMAINING);
-		String sortByField = Constants.VOUCHER_REMAINING;
+		final String sortByField = Constants.VOUCHER_REMAINING;
 		common.getResults(pipeline, dir, pgNum, retMap, kpisV, collectionName, sortByField, mongoTemplate);
 
 		if (!second) {
@@ -1785,6 +1799,7 @@ public class KPIFilterAndGroupByHandler {
 
 			getTotalVoucherValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 
+			getTotalLeakageRecoveredValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
 
 		}
 
@@ -1794,34 +1809,34 @@ public class KPIFilterAndGroupByHandler {
 	}
 
 	
-	public int getTotalVoucherREMAINING_COUNT(String groupByPropName,
-			Map<String, List<String>> argfilter, List<String> yyyymm, String searchStr) {
+	public int getTotalVoucherREMAINING_COUNT(final String groupByPropName,
+			final Map<String, List<String>> argfilter, final List<String> yyyymm, final String searchStr) {
 
-		String collectionName = Constants.VOUCHER_DETAILS_COLLECTION_NAME;
+		final String collectionName = Constants.VOUCHER_DETAILS_COLLECTION_NAME;
 
-		List<Bson> pipeline = new ArrayList<>();
+		final List<Bson> pipeline = new ArrayList<>();
 
 		Map<String, List<String>> filter = null;
 
 		if (argfilter != null) {
-			filter = new HashMap<String, List<String>>();
+			filter = new HashMap<>();
 			filter.putAll(argfilter);
 		}
 
 		if (filter != null) {
 
-			Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
+			final Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
 			if (bfilterClause != null)
 				pipeline.add(bfilterClause);
 		}
 
 		if (searchStr != null && searchStr.trim().length() != 0) {
-			Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
+			final Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
 			pipeline.add(srchBson);
 		}
 		
 
-		Bson firstProjectVLBson = BasicDBObject
+		final Bson firstProjectVLBson = BasicDBObject
 				.parse("{$project:{"
 						+ "_id: 0, "
 						+ "ivu:'$invoiceUnitPriceAsPerTc', "
@@ -1850,7 +1865,7 @@ public class KPIFilterAndGroupByHandler {
 
 		// add dateFilters
 		if (yyyymm != null && yyyymm.size() > 0) {
-			Bson dateFilter = match(in("podtyy", yyyymm));
+			final Bson dateFilter = match(in("podtyy", yyyymm));
 			pipeline.add(dateFilter);
 		}
 
@@ -1873,7 +1888,7 @@ public class KPIFilterAndGroupByHandler {
 		logger.debug("-->>{}", cnt);
 
 		
-		Bson secondProjectVLBson = BasicDBObject.parse("{$group:{_id:'$_id."+groupByPropName+"', "+
+		final Bson secondProjectVLBson = BasicDBObject.parse("{$group:{_id:'$_id."+groupByPropName+"', "+
 		Constants.VOUCHER_REMAINING+":{'$sum':'$rem'}}}");
 		pipeline.add(secondProjectVLBson);
 
@@ -1887,34 +1902,34 @@ public class KPIFilterAndGroupByHandler {
 	
 	
 	
-	public int getTotalVoucherItemsCOUNT(String groupByPropName, Map<String, List<String>> argfilter, 
-			List<String> yyyymm, String searchStr) {
+	public int getTotalVoucherItemsCOUNT(final String groupByPropName, final Map<String, List<String>> argfilter, 
+			final List<String> yyyymm, final String searchStr) {
 
-		String collectionName = Constants.PRICE_AGREEMENT_SPN_DETAILS_COLLECTION_NAME;
+		final String collectionName = Constants.PRICE_AGREEMENT_SPN_DETAILS_COLLECTION_NAME;
 
-		List<Bson> pipeline = new ArrayList<>();
+		final List<Bson> pipeline = new ArrayList<>();
 
 		Map<String, List<String>> filter = null;
 
 		if (argfilter != null) {
-			filter = new HashMap<String, List<String>>();
+			filter = new HashMap<>();
 			filter.putAll(argfilter);
 		}
 
 		if (filter != null) {
 
-			Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
+			final Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
 			if (bfilterClause != null)
 				pipeline.add(bfilterClause);
 		}
 
 		if (searchStr != null && searchStr.trim().length() != 0) {
-			Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
+			final Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
 			pipeline.add(srchBson);
 		}
 		
 
-		Bson firstProjectVLBson = BasicDBObject
+		final Bson firstProjectVLBson = BasicDBObject
 				.parse("{$project:{"
 						+ "vouch : '$appliedVoucher'"
 						+ "supplierPartNumber: '$supplierPartNumber', "
@@ -1935,7 +1950,7 @@ public class KPIFilterAndGroupByHandler {
 //		common.printDocs(collectionName, pipeline, mongoTemplate);
 
 		
-		Bson expandVouch = BasicDBObject
+		final Bson expandVouch = BasicDBObject
 				.parse("{$project:{"
 						+ "vouchstdt : '$vouch.startDate'"
 						+ "vouchenddt : '$vouch.endDate'"
@@ -1959,11 +1974,11 @@ public class KPIFilterAndGroupByHandler {
 		// add dateFilters
 		if (yyyymm != null && yyyymm.size() > 0) {
 			
-			List<Bson> andList = new ArrayList<>();
-			for(String ym : yyyymm) {
-				LocalDate firstDay = LocalDate.parse(ym+"-01", DateTimeFormatter.ISO_DATE);
-				String yymm = firstDay.format(DateTimeFormatter.ofPattern("YYYY-MM"));
-				LocalDate lastDay = YearMonth.from(firstDay).atEndOfMonth();
+			final List<Bson> andList = new ArrayList<>();
+			for(final String ym : yyyymm) {
+				final LocalDate firstDay = LocalDate.parse(ym+"-01", DateTimeFormatter.ISO_DATE);
+				final String yymm = firstDay.format(DateTimeFormatter.ofPattern("YYYY-MM"));
+				final LocalDate lastDay = YearMonth.from(firstDay).atEndOfMonth();
 				andList.add(Filters.and(Filters.gte("vouchenddt", firstDay), Filters.lte("vouchstdt", lastDay)));
 			}
 			
@@ -1978,11 +1993,11 @@ public class KPIFilterAndGroupByHandler {
 //		printDocs(collectionName, pipeline);
 
 
-		String grpDist = "{$group:{"
+		final String grpDist = "{$group:{"
 				+ "_id:{dim : '$"+groupByPropName+"', vid: '$vouchid'}, "
 				+"val :{'$max':'$vouchval'} "
 				+ "}}";
-		Bson groupdistinct = BasicDBObject.parse(grpDist);
+		final Bson groupdistinct = BasicDBObject.parse(grpDist);
 		pipeline.add(groupdistinct);
 //		common.printDocs(collectionName, pipeline, mongoTemplate);
 
@@ -1994,6 +2009,269 @@ public class KPIFilterAndGroupByHandler {
 		
 	}
 
+	
+	public Map<String, Map<String, Double>> getTotalLeakageRecoveredValue(final String groupByPropName, final int dir,
+			final Map<String, List<String>> argfilter, final int pgNum, final List<String> yyyymm,
+			Map<String, Map<String, Double>> retMap, final boolean second, final String searchStr) {
+
+//		String collectionName = "leakage";
+		
+		final String collectionName = Constants.LEAKAGE_RECOVERED_COLLECTION_NAME;
+		if (retMap == null) {
+			retMap = new LinkedHashMap<>();
+		}
+
+		if (retMap.size() == 0 && second)
+			return retMap;
+
+		final List<Bson> pipeline = new ArrayList<>();
+
+		Map<String, List<String>> filter = null;
+
+		if (argfilter != null) {
+			filter = new HashMap<>();
+			filter.putAll(argfilter);
+		}
+
+//		logger.debug("{} - {}", groupByPropName, orderByKPIField);
+
+		if (filter != null) {
+
+			final Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
+			if (bfilterClause != null)
+				pipeline.add(bfilterClause);
+		}
+
+		if (!second && searchStr != null && searchStr.trim().length() != 0) {
+			final Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
+			pipeline.add(srchBson);
+		}
+
+//		printDocs(collectionName, pipeline);
+
+//		setCommonDateFiltersForPOToLimitFutureDate(pipeline);
+
+		final Bson firstProjectVLBson = BasicDBObject
+				.parse("" + "{$project:{"
+						+ "supplierPartNumber: '$supplierPartNumber', "
+						+ "tradingModel: '$tradingModel' , "
+						+ "supplierId: '$supplierId' , " 
+						+ "outlineAgreementNumber: '$outlineAgreementNumber', "
+						+ "catalogueType: '$catalogueType' , " 
+						+ "opcoCode: '$opcoCode', "
+						+ "parentSupplierId: '$parentSupplierId' , " 
+						+ "materialGroupL4: '$materialGroupL4' , "
+						+ "priceAgreementReferenceName: '$priceAgreementReferenceName'," 
+						+ "lvl1: '$valueLeakageCalcAsPerPeriod'"
+						+ "}}");
+		pipeline.add(firstProjectVLBson);
+
+//		printDocs(collectionName, pipeline);
+
+		pipeline.add(BasicDBObject.parse("{$unwind : '$lvl1'},"));
+
+//		printDocs(collectionName, pipeline);
+
+		final Bson secondProjectVLBson = BasicDBObject.parse("{$project:{"
+				+ "supplierPartNumber: '$supplierPartNumber', "
+				+ "tradingModel: '$tradingModel' , "
+				+ "supplierId: '$supplierId' , " 
+				+ "outlineAgreementNumber: '$outlineAgreementNumber', "
+				+ "catalogueType: '$catalogueType' , " 
+				+ "opcoCode: '$opcoCode', "
+				+ "parentSupplierId: '$parentSupplierId' , " 
+				+ "materialGroupL4: '$materialGroupL4' , "
+				+ "priceAgreementReferenceName: '$priceAgreementReferenceName'," 
+				+ "date:'$lvl1.yyyyDashMonth',"
+				+ "vl: '$lvl1.valueLeakageIdentified',"
+				+ "lastarr:{$slice:['$lvl1.amountAgreedSettledUserDetails', -1]}"
+				+ "} }");
+		pipeline.add(secondProjectVLBson);
+
+//		printDocs(collectionName, pipeline);
+
+		// add dateFilters
+		if (yyyymm != null && yyyymm.size() > 0) {
+			final Bson dateFilter = match(in("date", yyyymm));
+			pipeline.add(dateFilter);
+		}
+
+//		printDocs(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline);
+		// add already selected filter
+		if (retMap.size() > 0) {
+			pipeline.add(match(in(groupByPropName, retMap.keySet())));
+		}
+
+		pipeline.add(Aggregates.unwind("$lastarr"));
+
+		final Bson lastValue = BasicDBObject.parse("{$project:{"
+				+ "supplierPartNumber: '$supplierPartNumber', "
+				+ "tradingModel: '$tradingModel' , "
+				+ "supplierId: '$supplierId' , " 
+				+ "outlineAgreementNumber: '$outlineAgreementNumber', "
+				+ "catalogueType: '$catalogueType' , " 
+				+ "opcoCode: '$opcoCode', "
+				+ "parentSupplierId: '$parentSupplierId' , " 
+				+ "materialGroupL4: '$materialGroupL4' , "
+				+ "priceAgreementReferenceName: '$priceAgreementReferenceName'," 
+				+ "vl: 1,"
+				+ "val:'$lastarr.valueLeakageAmountSettled'"
+				+ "} }");
+		pipeline.add(lastValue);
+
+		
+
+		final String projectLV = "{$project : {" + "dim: '$" + groupByPropName + "', " + "lv:'$val', " + "}}";
+		final Bson bPrjOIV = BasicDBObject.parse(projectLV);
+		pipeline.add(bPrjOIV);
+//		common.printDocs(collectionName, pipeline, mongoTemplate);
+
+
+		final String grpByLV = "{$group:{_id: '$dim' , " + Constants.RECOVERED_VALUE + ":{$sum:'$lv'} " + "}}";
+//		common.printDocs(collectionName, pipeline, mongoTemplate);
+
+		pipeline.add(BasicDBObject.parse(grpByLV));
+
+//		common.printDocs(collectionName, pipeline, mongoTemplate);
+
+//		printDocs(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline);
+
+		int count = 0;
+		if (!second) {
+			count = common.getCount(collectionName, pipeline, mongoTemplate);
+//			logger.debug("The total count should be {}", count);
+		}
+
+
+		final List<String> kpisV = new ArrayList<>();
+		kpisV.add(Constants.RECOVERED_VALUE);
+		final String sortByField = Constants.RECOVERED_VALUE;
+		common.getResults(pipeline, dir, pgNum, retMap, kpisV, collectionName, sortByField, mongoTemplate);
+
+		if (!second) {
+			getTotalOrdersValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
+			getTotalInvoiceValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
+			getTotalOrdersIssued(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
+			getTotalActiveItems(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
+			getTotalActivePAs(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
+			getTotalVoucherValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
+			getTotalVoucherREMAININGValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
+			getTotalLeakageValue(groupByPropName, dir, argfilter, pgNum, yyyymm, retMap, true, searchStr);
+
+		}
+
+		logger.debug("FINAL    FINAL   RECOVERED 3 {}", retMap);
+
+		return retMap;
+	}
+
+	public int getTotalLeakageRecoveredCOUNT(final String groupByPropName, final Map<String, List<String>> argfilter,
+			final List<String> yyyymm, final String searchStr) {
+
+//		String collectionName = "leakage";
+
+		final String collectionName = Constants.LEAKAGE_RECOVERED_COLLECTION_NAME;
+
+		final List<Bson> pipeline = new ArrayList<>();
+
+		Map<String, List<String>> filter = null;
+
+		if (argfilter != null) {
+			filter = new HashMap<>();
+			filter.putAll(argfilter);
+		}
+
+//		logger.debug("{} - {}", groupByPropName, orderByKPIField);
+
+		if (filter != null) {
+
+			final Bson bfilterClause = common.formMatchClauseForListFilterBson(filter);
+			if (bfilterClause != null)
+				pipeline.add(bfilterClause);
+		}
+
+		if (searchStr != null && searchStr.trim().length() != 0) {
+			final Bson srchBson = match(regex(groupByPropName, searchStr, "i"));
+			pipeline.add(srchBson);
+		}
+
+//		printDocs(collectionName, pipeline);
+
+//		setCommonDateFiltersForPOToLimitFutureDate(pipeline);
+
+		final Bson firstProjectVLBson = BasicDBObject.parse(
+				"" + "{$project:{" + "supplierPartNumber: '$supplierPartNumber', " + "tradingModel: '$tradingModel' , "
+						+ "supplierId: '$supplierId' , " + "outlineAgreementNumber: '$outlineAgreementNumber', "
+						+ "catalogueType: '$catalogueType' , " + "opcoCode: '$opcoCode', "
+						+ "parentSupplierId: '$parentSupplierId' , " + "materialGroupL4: '$materialGroupL4' , "
+						+ "priceAgreementReferenceName: '$priceAgreementReferenceName',"
+						+ "lvl1: '$valueLeakageCalcAsPerPeriod'" + "}}");
+		pipeline.add(firstProjectVLBson);
+
+//		printDocs(collectionName, pipeline);
+
+		pipeline.add(BasicDBObject.parse("{$unwind : '$lvl1'},"));
+
+//		printDocs(collectionName, pipeline);
+
+		final Bson secondProjectVLBson = BasicDBObject.parse(
+				"{$project:{" + "supplierPartNumber: '$supplierPartNumber', " + "tradingModel: '$tradingModel' , "
+						+ "supplierId: '$supplierId' , " + "outlineAgreementNumber: '$outlineAgreementNumber', "
+						+ "catalogueType: '$catalogueType' , " + "opcoCode: '$opcoCode', "
+						+ "parentSupplierId: '$parentSupplierId' , " + "materialGroupL4: '$materialGroupL4' , "
+						+ "priceAgreementReferenceName: '$priceAgreementReferenceName'," + "date:'$lvl1.yyyyDashMonth',"
+						+ "vl: '$lvl1.valueLeakageIdentified',"
+						+ "lastarr:{$slice:['$lvl1.amountAgreedSettledUserDetails', -1]}" + "} }");
+		pipeline.add(secondProjectVLBson);
+
+//		printDocs(collectionName, pipeline);
+
+		// add dateFilters
+		if (yyyymm != null && yyyymm.size() > 0) {
+			final Bson dateFilter = match(in("date", yyyymm));
+			pipeline.add(dateFilter);
+		}
+
+//		printDocs(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline);
+		// add already selected filter
+
+		pipeline.add(Aggregates.unwind("$lastarr"));
+
+		final Bson lastValue = BasicDBObject.parse(
+				"{$project:{" + "supplierPartNumber: '$supplierPartNumber', " + "tradingModel: '$tradingModel' , "
+						+ "supplierId: '$supplierId' , " + "outlineAgreementNumber: '$outlineAgreementNumber', "
+						+ "catalogueType: '$catalogueType' , " + "opcoCode: '$opcoCode', "
+						+ "parentSupplierId: '$parentSupplierId' , " + "materialGroupL4: '$materialGroupL4' , "
+						+ "priceAgreementReferenceName: '$priceAgreementReferenceName'," + "vl: 1,"
+						+ "val:'$lastarr.valueLeakageAmountSettled'" + "} }");
+		pipeline.add(lastValue);
+
+		final String projectLV = "{$project : {" + "dim: '$" + groupByPropName + "', " + "lv:'$val', " + "}}";
+		final Bson bPrjOIV = BasicDBObject.parse(projectLV);
+		pipeline.add(bPrjOIV);
+//		common.printDocs(collectionName, pipeline, mongoTemplate);
+
+		final String grpByLV = "{$group:{_id: '$dim' , " + Constants.RECOVERED_VALUE + ":{$sum:'$lv'} " + "}}";
+//		common.printDocs(collectionName, pipeline, mongoTemplate);
+
+		pipeline.add(BasicDBObject.parse(grpByLV));
+
+		common.printDocs(collectionName, pipeline, mongoTemplate);
+
+//		printDocs(Constants.PURCHASE_ORDER_INVOICE_DATA_COLLECTION_NAME, pipeline);
+
+		int count = 0;
+		count = common.getCount(collectionName, pipeline, mongoTemplate);
+		return count;
+
+	}
 	
 	
 }

@@ -891,3 +891,148 @@ db.ValueLeakageInvoicePurchaseOrder.aggregate([
 {$limit: 5}
 //ddddd
 ])
+
+
+db.valueLeakageRecovered.aggregate([
+{$project:{parn:'$priceAgreementReferenceName', sn:'$supplierName', ola: '$outlineAgreementNumber', lvl1:'$valueLeakageCalcAsPerPeriod'}},
+{$unwind : '$lvl1'},
+{$project:{
+       parn:1, 
+       sn:1, 
+       ola:1, 
+       date:'$lvl1.yyyyDashMonth',
+       lastarr:{$slice:['$lvl1.amountAgreedSettledUserDetails', -1]}
+       }
+},
+{$unwind:'$lastarr'},
+{$sort:{parn:1}},
+{$project:{
+       parn:1, 
+       sn:1, 
+       ola:1, 
+       date:1,
+       lastarr:'$lastarr.valueLeakageAmountSettled'
+       }
+},
+]);
+
+
+
+db.valueLeakageRecovered.aggregate([
+{$project:{parn:'$priceAgreementReferenceName', an:'$supplierName', ola: '$outlineAgreementNumber', lvl1: '$valueLeakageCalcAsPerPeriod'}},
+{$unwind : '$lvl1'},
+{$project:{
+       parn:1, 
+       sn:1, 
+       ola:1, 
+       date:'$lvl1.yyyyDashMonth',
+       vl: '$lvl1.valueLeakageIdentified',
+       lastarr:{$slice:['$lvl1.amountAgreedSettledUserDetails', -1]}
+       }
+},
+{$unwind:'$lastarr'},
+{$sort:{parn:1}},
+{$project:{
+       parn:1, 
+       sn:1, 
+       ola:1, 
+       date:1,
+       vl:1,
+       val:'$lastarr.valueLeakageAmountSettled'
+       }
+},
+{$group:{_id:null, val:{'$sum':'$val'}}}
+
+]);
+
+
+
+//ALL AVAILABLE MONTHS
+
+db.valueLeakageRecovered.aggregate([
+{$project:{tradingModel:1,priceAgreementReferenceName:1,supplierName:1,  opcoCode:1, outlineAgreementNumber:1, lvl1:'$valueLeakageCalcAsPerPeriod'}},
+{$unwind : '$lvl1'},
+{$project:{
+       tradingModel:1, 
+       priceAgreementReferenceName:1, 
+       supplierName:1, 
+       opcoCode:1,
+       outlineAgreementNumber:1,
+       reportPeriod:'$lvl1.yyyyDashMonth',
+       lkgVal: '$lvl1.valueLeakageIdentified',
+       lastarr:{$slice:['$lvl1.amountAgreedSettledUserDetails', -1]}
+       }
+},
+{$unwind:'$lastarr'},
+{$project:{
+       tradingModel:1, 
+       priceAgreementReferenceName:1, 
+       supplierName:1, 
+       opcoCode:1,
+       outlineAgreementNumber:1,
+       reportPeriod:1,
+       lkgVal: 1,
+       amountRecovered:'$lastarr.valueLeakageAmountSettled'
+       }
+},
+]);
+
+//ALL AVAILABLE MONTHS FOR A PR
+db.valueLeakageRecovered.aggregate([
+{$match: {priceAgreementReferenceName : {$eq : 'VPC_BF_IT&E_OR_LU56_SWR_MULT_400017770_CDA6E303643F'}}},
+{$project:{tradingModel:1,priceAgreementReferenceName:1,supplierName:1,  opcoCode:1, outlineAgreementNumber:1, lvl1:'$valueLeakageCalcAsPerPeriod'}},
+{$unwind : '$lvl1'},
+{$project:{
+       tradingModel:1, 
+       priceAgreementReferenceName:1, 
+       supplierName:1, 
+       opcoCode:1,
+       outlineAgreementNumber:1,
+       reportPeriod:'$lvl1.yyyyDashMonth',
+       lkgVal: '$lvl1.valueLeakageIdentified',
+       lastarr:{$slice:['$lvl1.amountAgreedSettledUserDetails', -1]}
+       }
+},
+{$unwind:'$lastarr'},
+{$project:{
+       tradingModel:1, 
+       priceAgreementReferenceName:1, 
+       supplierName:1, 
+       opcoCode:1,
+       outlineAgreementNumber:1,
+       reportPeriod:1,
+       lkgVal: 1,
+       amountRecovered:'$lastarr.valueLeakageAmountSettled'
+       }
+},
+]);
+
+//LATEST AVAILABLE REPORTS - GRRIDDDD:
+db.valueLeakageRecovered.aggregate([
+{$project:{tradingModel:1,priceAgreementReferenceName:1,supplierName:1,  opcoCode:1, outlineAgreementNumber:1, lvl1:{$slice:['$valueLeakageCalcAsPerPeriod', -1]}}},
+{$unwind : '$lvl1'},
+{$project:{
+       tradingModel:1, 
+       priceAgreementReferenceName:1, 
+       supplierName:1, 
+       opcoCode:1,
+       outlineAgreementNumber:1,
+       reportPeriod:'$lvl1.yyyyDashMonth',
+       lkgVal: '$lvl1.valueLeakageIdentified',
+       lastarr:{$slice:['$lvl1.amountAgreedSettledUserDetails', -1]}
+       }
+},
+{$unwind:'$lastarr'},
+{$project:{
+       tradingModel:1, 
+       priceAgreementReferenceName:1, 
+       supplierName:1, 
+       opcoCode:1,
+       outlineAgreementNumber:1,
+       reportPeriod:1,
+       lkgVal: 1,
+       amountRecovered:'$lastarr.valueLeakageAmountSettled'
+       }
+},
+]);
+

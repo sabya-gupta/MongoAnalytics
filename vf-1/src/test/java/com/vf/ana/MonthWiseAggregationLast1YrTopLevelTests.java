@@ -23,11 +23,11 @@ public class MonthWiseAggregationLast1YrTopLevelTests {
 	void testOrderValue() {
 		logger.debug("----------ov----------------");
 		
-		Map<String, List<String>> filters = new HashMap<>();
+		final Map<String, List<String>> filters = new HashMap<>();
 		
 		monthWiseAggregationLast1YrTopLevel.aggregateMonthWiseForLastOneYear(Constants.ORDER_VALUE, filters);
 		
-		List<String> suppIds = new ArrayList<String>();
+		final List<String> suppIds = new ArrayList<>();
 //		suppIds.add("xxxxxxxxxxxxxxxxxx");
 		suppIds.add("0400074915");
 		filters.put("supplierId", suppIds);
@@ -39,11 +39,11 @@ public class MonthWiseAggregationLast1YrTopLevelTests {
 	void testInvoiceValue() {
 		
 		logger.debug("----------iv----------------");
-		Map<String, List<String>> filters = new HashMap<>();
+		final Map<String, List<String>> filters = new HashMap<>();
 		
 		monthWiseAggregationLast1YrTopLevel.aggregateMonthWiseForLastOneYear(Constants.INVOICE_VALUE, filters);
 		
-		List<String> suppIds = new ArrayList<String>();
+		final List<String> suppIds = new ArrayList<>();
 //		suppIds.add("xxxxxxxxxxxxxxxxxx");
 		suppIds.add("0400074915");
 		filters.put("supplierId", suppIds);
@@ -55,11 +55,11 @@ public class MonthWiseAggregationLast1YrTopLevelTests {
 	void testActiveItems() {
 		logger.debug("----------AI----------------");
 		
-		Map<String, List<String>> filters = new HashMap<>();
+		final Map<String, List<String>> filters = new HashMap<>();
 		
 		monthWiseAggregationLast1YrTopLevel.aggregateMonthWiseForLastOneYear(Constants.ACTIVE_ITEMS, filters);
 		
-		List<String> suppIds = new ArrayList<String>();
+		final List<String> suppIds = new ArrayList<>();
 //		suppIds.add("xxxxxxxxxxxxxxxxxx");
 		suppIds.add("0400074915");
 		filters.put("supplierId", suppIds);
@@ -71,16 +71,32 @@ public class MonthWiseAggregationLast1YrTopLevelTests {
 	void testActivePAs() {
 		
 		logger.debug("----------PA----------------");
-		Map<String, List<String>> filters = new HashMap<>();
+		final Map<String, List<String>> filters = new HashMap<>();
 		
 		monthWiseAggregationLast1YrTopLevel.aggregateMonthWiseForLastOneYear(Constants.ACTIVE_PRICE_AGREEMENT, filters);
 		
-		List<String> suppIds = new ArrayList<String>();
+		final List<String> suppIds = new ArrayList<>();
 //		suppIds.add("xxxxxxxxxxxxxxxxxx");
 		suppIds.add("0400074915");
 		filters.put("supplierId", suppIds);
 		monthWiseAggregationLast1YrTopLevel.aggregateMonthWiseForLastOneYear(Constants.ACTIVE_PRICE_AGREEMENT, filters);
 		
+	}
+
+	@Test
+	void testOrderIssued() {
+		logger.debug("----------ov----------------");
+
+		final Map<String, List<String>> filters = new HashMap<>();
+
+		monthWiseAggregationLast1YrTopLevel.aggregateMonthWiseForLastOneYear(Constants.NUMBER_OF_ORDERS, filters);
+
+		final List<String> suppIds = new ArrayList<>();
+//		suppIds.add("xxxxxxxxxxxxxxxxxx");
+		suppIds.add("0400074915");
+		filters.put("supplierId", suppIds);
+		monthWiseAggregationLast1YrTopLevel.aggregateMonthWiseForLastOneYear(Constants.NUMBER_OF_ORDERS, filters);
+
 	}
 	
 }
