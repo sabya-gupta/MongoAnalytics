@@ -432,7 +432,7 @@ public class ValueLeakageAnalysis {
 
 		logger.debug("lkg map = {}", lkgMap);
 
-		logger.debug("{}", retList);
+		logger.debug(">>{}", retList);
 
 		final MonthlyValueLeakageEntity retEnt = new MonthlyValueLeakageEntity();
 		retEnt.setLeakagaesForPrevMonths(lkgMap);
