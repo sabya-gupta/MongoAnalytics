@@ -8,7 +8,7 @@ public class Constants {
 	public static final String AGGREGATED_DATA_FIRST_LEVEL_COLLECTION_NAME = "aggregatedDataFirstLevel123";
 	public static final String AGGREGATED_DATA_SECOND_LEVEL_COLLECTION_NAME = "aggregatedDataSecondLevel123";
 	public static final String VALUE_LEAKAGE_COLLECTION_NAME = "ValueLeakageInvoicePurchaseOrder";
-	public static final String LEAKAGE_RECOVERED_COLLECTION_NAME = "valueLeakageRecovered";
+	public static final String LEAKAGE_RECOVERED_COLLECTION_NAME = "valueLeakageReportData";
 	public static final String VALUE_LEAKAGE_MASTER_COLLECTION_NAME = "voucherCollectionDetails";
 	public static final String VOUCHER_DETAILS_COLLECTION_NAME = VALUE_LEAKAGE_COLLECTION_NAME;
 	public static final String ORDER_VALUE="ORDER_VALUE";
@@ -30,6 +30,7 @@ public class Constants {
 	public static final String PROP_CATALOG_TYPE = "catalogueType";
 	public static final String PROP_OPCO_CODE = "opcoCode";
 	public static final String PROP_PRICE_ACREEMENT_REFERENCE_NAME = "priceAgreementReferenceName";
+	public static final String PROP_PRICE_ACREEMENT_REFERENCE_ID = "priceAgreementId";
 	public static final String PROP_MATERIAL_GROUP_4 = "materialGroupL4";
 	public static final String PROP_SUPPLIER_PART_NUMBER = "supplierPartNumber";
 	public static final String PROP_VALID_TO_DATE = "validToDate";

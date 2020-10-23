@@ -24,6 +24,7 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
+import com.mongodb.client.model.UnwindOptions;
 
 @Service
 public class ValueLeakageAnalysis {
@@ -57,23 +58,23 @@ public class ValueLeakageAnalysis {
 				pipeline.add(bfilterClause);
 		}
 
-		final Bson firstProjectVLBson = BasicDBObject.parse(
-				"{$project:{"
-				+ "tradingModel:1,"
-				+ "priceAgreementReferenceName:1,"
-				+ "supplierName:1,  "
-				+ "opcoCode:1, "
-				+ "outlineAgreementNumber:1, "
-						+ "lvl1:'$valueLeakageCalcAsPerPeriod', " + "categoryManager : 1"
-				+ "}}");
+		final String q = "{$project:{" + "tradingModel:1," + "priceAgreementReferenceName:1, priceAgreementId: 1,"
+				+ "supplierName:1,  " + "opcoCode:1, " + "outlineAgreementNumber:1, "
+				+ "lvl1:'$valueLeakageCalcAsPerPeriod', " + "categoryManager : 1" + "}}";
+
+		final Bson firstProjectVLBson = BasicDBObject.parse(q);
 		pipeline.add(firstProjectVLBson);
 
+		logger.debug("1 count = {}", common.getCount(collectionName, pipeline, mongoTemplate));
 		pipeline.add(Aggregates.unwind("$lvl1"));
+		logger.debug("2 count = {}", common.getCount(collectionName, pipeline, mongoTemplate));
+
 
 		final Bson secondProjectVLBson = BasicDBObject.parse(
 				"{$project:{" 
 				+ "tradingModel:1,"
 				+ "priceAgreementReferenceName:1,"
+						+ "priceAgreementId : 1, "
 				+ "supplierName:1,  "
 				+ "opcoCode:1, "
 				+ "outlineAgreementNumber:1, "
@@ -82,6 +83,7 @@ public class ValueLeakageAnalysis {
 						+ "lastarr:{$slice:['$lvl1.amountAgreedSettledUserDetails', -1]}," + "categoryManager : 1"
 			    + "} }");
 		pipeline.add(secondProjectVLBson);
+		logger.debug("3 count = {}", common.getCount(collectionName, pipeline, mongoTemplate));
 
 		// add dateFilters
 		if (yyyymm != null && yyyymm.size() > 0) {
@@ -94,13 +96,15 @@ public class ValueLeakageAnalysis {
 			pipeline.add(srchBson);
 		}
 
-		pipeline.add(Aggregates.unwind("$lastarr"));
+		pipeline.add(Aggregates.unwind("$lastarr", new UnwindOptions().preserveNullAndEmptyArrays(true)));
+		logger.debug("4 count = {}", common.getCount(collectionName, pipeline, mongoTemplate));
 
 
 		final String thirdProj =
 				"{$project:{" 
 				+ "tradingModel:1,"
 				+ "priceAgreementReferenceName:1,"
+						+ "priceAgreementId : 1, "
 				+ "supplierName:1,  "
 				+ "opcoCode:1, "
 				+ "outlineAgreementNumber:1, "
@@ -111,7 +115,31 @@ public class ValueLeakageAnalysis {
 			    + "} }";
 
 				pipeline.add(BasicDBObject.parse(thirdProj));
-//				common.printDocs(collectionName, pipeline, mongoTemplate);
+
+				final String fourthGrp = "{$group:{ _id: {" + "tradingModel:'$tradingModel',"
+						+ "priceAgreementReferenceName:'$priceAgreementReferenceName',"
+						+ "priceAgreementId : '$priceAgreementId', " + "supplierName:'$supplierName',  "
+						+ "opcoCode:'$opcoCode', " + "outlineAgreementNumber:'$outlineAgreementNumber', "
+						+ "reportPeriod :'$reportPeriod'," + "categoryManager : '$categoryManager'},  "
+						+ Constants.LEAKAGE_VALUE + " : {$max : '$"
+						+ Constants.LEAKAGE_VALUE + "'}, " + "amountRecovered: {$min:'$amountRecovered'}" + "} }";
+
+				logger.debug(fourthGrp);
+				pipeline.add(BasicDBObject.parse(fourthGrp));
+				logger.debug("5 count = {}", common.getCount(collectionName, pipeline, mongoTemplate));
+
+				final String fifthPrj = "{$project:{" + "tradingModel:'$_id.tradingModel',"
+						+ "priceAgreementReferenceName:'$_id.priceAgreementReferenceName',"
+						+ "priceAgreementId : '$_id.priceAgreementId', " + "supplierName:'$_id.supplierName',  "
+						+ "opcoCode:'$_id.opcoCode', " + "outlineAgreementNumber: '$_id.outlineAgreementNumber', "
+						+ Constants.LEAKAGE_VALUE + " : 1, " + "reportPeriod:'$_id.reportPeriod',"
+						+ "categoryManager : '$_id.categoryManager'," + "amountRecovered:1" + "} }";
+
+				logger.debug(fifthPrj);
+				pipeline.add(BasicDBObject.parse(fifthPrj));
+				logger.debug("6 count = {}", common.getCount(collectionName, pipeline, mongoTemplate));
+
+				// common.printDocs(collectionName, pipeline, mongoTemplate);
 
 //		int count = 0;
 //		if (!second) {
@@ -156,29 +184,35 @@ public class ValueLeakageAnalysis {
 			pipeline.add(Aggregates.limit(pgSz));
 		}
 
+		logger.debug("7 count = {}", common.getCount(collectionName, pipeline, mongoTemplate));
 
 		final MongoDatabase mongo = mongoTemplate.getDb();
 		final AggregateIterable<Document> ret = mongo.getCollection(collectionName).aggregate(pipeline);
 
 		final List<Map<String, String>> retList = new ArrayList<>();
 		ret.cursor().forEachRemaining(doc -> {
-			logger.debug("kkk{}", doc);
+			logger.debug("kkk {}", doc);
 			final Map<String, String> tmpMap = new HashMap<>();
 			tmpMap.put("tradingModel", doc.getString("tradingModel"));
 			tmpMap.put("priceAgreementReferenceName", doc.getString("priceAgreementReferenceName"));
+			tmpMap.put("priceAgreementId", doc.getString("priceAgreementId"));
 			tmpMap.put("supplierName", doc.getString("supplierName"));
 			tmpMap.put("opco", doc.getString("opcoCode"));
 			tmpMap.put("ola", doc.getString("outlineAgreementNumber"));
 			tmpMap.put("reportPeriod", doc.getString("reportPeriod"));
 			tmpMap.put(Constants.LEAKAGE_VALUE, doc.getDouble(Constants.LEAKAGE_VALUE).toString());
 			logger.debug("1");
-			tmpMap.put(Constants.RECOVERED_VALUE, doc.getDouble("amountRecovered").toString());
+			Double recoveredVal = doc.getDouble("amountRecovered");
+			if (recoveredVal == null)
+				recoveredVal = 0.00;
+			tmpMap.put(Constants.RECOVERED_VALUE, recoveredVal.toString());
 			logger.debug("2");
 			tmpMap.put("vpcOwner", doc.getString("categoryManager"));
 			retList.add(tmpMap);
 		});
 
 		logger.debug("{}", retList);
+		logger.debug("SIZE = {}", retList.size());
 		return retList;
 	}
 
@@ -202,23 +236,22 @@ public class ValueLeakageAnalysis {
 				pipeline.add(bfilterClause);
 		}
 
-		final Bson firstProjectVLBson = BasicDBObject.parse(
-				"{$project:{"
-				+ "tradingModel:1,"
-				+ "priceAgreementReferenceName:1,"
-				+ "supplierName:1,  "
-				+ "opcoCode:1, "
-				+ "outlineAgreementNumber:1, "
-						+ "lvl1:'$valueLeakageCalcAsPerPeriod', " + "categoryManager : 1"
-				+ "}}");
+		final String q = "{$project:{" + "tradingModel:1," + "priceAgreementReferenceName:1, priceAgreementId: 1,"
+				+ "supplierName:1,  " + "opcoCode:1, " + "outlineAgreementNumber:1, "
+				+ "lvl1:'$valueLeakageCalcAsPerPeriod', " + "categoryManager : 1" + "}}";
+
+		final Bson firstProjectVLBson = BasicDBObject.parse(q);
 		pipeline.add(firstProjectVLBson);
 
+		logger.debug("1 count = {}", common.getCount(collectionName, pipeline, mongoTemplate));
 		pipeline.add(Aggregates.unwind("$lvl1"));
+		logger.debug("2 count = {}", common.getCount(collectionName, pipeline, mongoTemplate));
 
 		final Bson secondProjectVLBson = BasicDBObject.parse(
 				"{$project:{" 
 				+ "tradingModel:1,"
 				+ "priceAgreementReferenceName:1,"
+						+ "priceAgreementId : 1, "
 				+ "supplierName:1,  "
 				+ "opcoCode:1, "
 				+ "outlineAgreementNumber:1, "
@@ -227,6 +260,7 @@ public class ValueLeakageAnalysis {
 						+ "lastarr:{$slice:['$lvl1.amountAgreedSettledUserDetails', -1]}," + "categoryManager : 1"
 			    + "} }");
 		pipeline.add(secondProjectVLBson);
+		logger.debug("3 count = {}", common.getCount(collectionName, pipeline, mongoTemplate));
 
 		// add dateFilters
 		if (yyyymm != null && yyyymm.size() > 0) {
@@ -239,13 +273,15 @@ public class ValueLeakageAnalysis {
 			pipeline.add(srchBson);
 		}
 
-		pipeline.add(Aggregates.unwind("$lastarr"));
+		pipeline.add(Aggregates.unwind("$lastarr", new UnwindOptions().preserveNullAndEmptyArrays(true)));
+		logger.debug("4 count = {}", common.getCount(collectionName, pipeline, mongoTemplate));
 
 
 		final String thirdProj =
 				"{$project:{" 
 				+ "tradingModel:1,"
 				+ "priceAgreementReferenceName:1,"
+						+ "priceAgreementId : 1, "
 				+ "supplierName:1,  "
 				+ "opcoCode:1, "
 				+ "outlineAgreementNumber:1, "
@@ -256,7 +292,45 @@ public class ValueLeakageAnalysis {
 			    + "} }";
 
 				pipeline.add(BasicDBObject.parse(thirdProj));
-				common.printDocs(collectionName, pipeline, mongoTemplate);
+
+				final String fourthGrp = "{$group:{ _id: {" + "tradingModel:'$tradingModel',"
+						+ "priceAgreementReferenceName:'$priceAgreementReferenceName',"
+						+ "priceAgreementId : '$priceAgreementId', " + "supplierName:'$supplierName',  "
+						+ "opcoCode:'$opcoCode', " + "outlineAgreementNumber:'$outlineAgreementNumber', "
+						+ "reportPeriod :'$reportPeriod'," + "categoryManager : '$categoryManager'},  "
+						+ Constants.LEAKAGE_VALUE + " : {$max : '$" + Constants.LEAKAGE_VALUE + "'}, "
+						+ "amountRecovered: {$min:'$amountRecovered'}" + "} }";
+
+				logger.debug(fourthGrp);
+				pipeline.add(BasicDBObject.parse(fourthGrp));
+				logger.debug("5 count = {}", common.getCount(collectionName, pipeline, mongoTemplate));
+
+				final String fifthPrj = "{$project:{" + "tradingModel:'$_id.tradingModel',"
+						+ "priceAgreementReferenceName:'$_id.priceAgreementReferenceName',"
+						+ "priceAgreementId : '$_id.priceAgreementId', " + "supplierName:'$_id.supplierName',  "
+						+ "opcoCode:'$_id.opcoCode', " + "outlineAgreementNumber: '$_id.outlineAgreementNumber', "
+						+ Constants.LEAKAGE_VALUE + " : 1, " + "reportPeriod:'$_id.reportPeriod',"
+						+ "categoryManager : '$_id.categoryManager'," + "amountRecovered:1" + "} }";
+
+				logger.debug(fifthPrj);
+				pipeline.add(BasicDBObject.parse(fifthPrj));
+				logger.debug("6 count = {}", common.getCount(collectionName, pipeline, mongoTemplate));
+
+				// common.printDocs(collectionName, pipeline, mongoTemplate);
+
+//		int count = 0;
+//		if (!second) {
+//			count = common.getCount(collectionName, pipeline, mongoTemplate);
+////			logger.debug("The total count should be {}", count);
+//		}
+
+//		final String projectedFinal = "{$project:{" + "tradingModel: '$_id.tradingModel', "
+//				+ "priceAgreementReferenceName : '$_id.priceAgreementReferenceName', "
+//				+ "supplierName : '$_id.supplierName', " + "categoryManager: '$_id.categoryManager', "
+//				+ "opcoCode: '$_id.opcoCode', " + "outlineAgreementNumber: '$_id.outlineAgreementNumber', "
+//				+ "'Report Period' : '$_id.yyyymm' , " + Constants.LEAKAGE_VALUE + ":'$lkgVal'" + "}}";
+//
+//		pipeline.add(BasicDBObject.parse(projectedFinal));
 
 		//apply the value filter
 		if(valRangeFilters!=null && valRangeFilters.size()>0) {
@@ -302,7 +376,9 @@ public class ValueLeakageAnalysis {
 		}
 
 		final Bson firstProjectVLBson = BasicDBObject.parse("" + "{$project: {" + "tradingModel:1, "
-				+ "priceAgreementReferenceName:1, " + "supplierName:1, " + "opcoCode:1, " + "outlineAgreementNumber:1, "
+				+ "priceAgreementId:1, " + "priceAgreementReferenceName:1, " + "supplierName:1, " + "opcoCode:1, "
+				+ "supplierId: 1," + "parentSupplierId: 1,"
+				+ "outlineAgreementNumber:1, "
 				+ "materialGroupL4:1, " + "categoryManager:1, " 
 				+ "vl: {$slice:['$valueLeakages', 1]}" 
 				+ "}}");
@@ -312,10 +388,12 @@ public class ValueLeakageAnalysis {
 		common.printDocs(collectionName, pipeline, mongoTemplate);
 
 		final Bson secondProjectVLBson = BasicDBObject.parse("{$project : {" + "tradingModel:1, "
-				+ "priceAgreementReferenceName:1, " + "supplierName:1, " + "opcoCode:1, " + "outlineAgreementNumber:1, "
+				+ "priceAgreementReferenceName:1, priceAgreementId:1, " + "supplierName:1, " + "opcoCode:1, "
+				+ "outlineAgreementNumber:1, "
 				+ "dtt:'$vl.calculationDate', " + "categoryManager:1, "
 				+ "yyyymm: {$dateToString: { format: '%Y-%m', date: '$vl.calculationDate' }}, "
 				+ "materialGroupL4 : 1, "
+				+ "supplierId: 1," + "parentSupplierId: 1,"
 				+ "adjustedPrevValueLeakage : '$vl.adjustedAmountPrevPeriods', "
 				+ "val: '$vl.leakageValue' " + "} }");
 		pipeline.add(secondProjectVLBson);
@@ -330,11 +408,13 @@ public class ValueLeakageAnalysis {
 			final Bson srchBson = match(regex(searchField, searchStr, "i"));
 			pipeline.add(srchBson);
 		}
-		common.printDocs(collectionName, pipeline, mongoTemplate);
+//		common.printDocs(collectionName, pipeline, mongoTemplate);
 
 		final String grpByLV = "{$group:{_id: {" + "tradingModel: '$tradingModel', "
-				+ "priceAgreementReferenceName : '$priceAgreementReferenceName', " + "supplierName : '$supplierName', "
+				+ "priceAgreementReferenceName : '$priceAgreementReferenceName', priceAgreementId: '$priceAgreementId',"
+				+ "supplierName : '$supplierName', "
 				+ "categoryManager: '$categoryManager', " + "opcoCode: '$opcoCode', "
+				+ "supplierId: '$supplierId'," + "parentSupplierId: '$parentSupplierId',"
 				+ "outlineAgreementNumber: '$outlineAgreementNumber', " + "yyyymm : '$yyyymm' , " + "} , "
 				+ "lkgVal:{$sum:'$val'} " 
 				+ "materialGroupL4:{$addToSet:'$materialGroupL4'} ,"
@@ -342,7 +422,7 @@ public class ValueLeakageAnalysis {
 				+ "}}";
 
 		pipeline.add(BasicDBObject.parse(grpByLV));
-		common.printDocs(collectionName, pipeline, mongoTemplate);
+//		common.printDocs(collectionName, pipeline, mongoTemplate);
 
 //		int count = 0;
 //		if (!second) {
@@ -352,8 +432,10 @@ public class ValueLeakageAnalysis {
 
 		final String projectedFinal = "{$project:{" + "tradingModel: '$_id.tradingModel', "
 				+ "priceAgreementReferenceName : '$_id.priceAgreementReferenceName', "
+				+ "priceAgreementId : '$_id.priceAgreementId', "
 				+ "supplierName : '$_id.supplierName', " + "categoryManager: '$_id.categoryManager', "
 				+ "opcoCode: '$_id.opcoCode', " + "outlineAgreementNumber: '$_id.outlineAgreementNumber', "
+				+ "supplierId: '$_id.supplierId', " + "parentSupplierId: '$_id.parentSupplierId', "
 				+ "materialGroupL4 : 1, "
 				+ "prevVals : 1, "
 				+ "'Report Period' : '$_id.yyyymm' , " + Constants.LEAKAGE_VALUE + ":'$lkgVal'" + "}}";
@@ -375,7 +457,9 @@ public class ValueLeakageAnalysis {
 			pipeline.add(Aggregates.match(Filters.or(valFilters)));
 		}
 
-		common.printDocs(collectionName, pipeline, mongoTemplate);
+//		logger.debug(">>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+////		common.printDocs(collectionName, pipeline, mongoTemplate);
+//		logger.debug(">>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
 
 		if (sortByField != null && orderByDirection == Constants.SORT_DIRECTION_ASCENDING) {
 			pipeline.add(Aggregates.sort(Sorts.ascending(sortByField)));
@@ -401,14 +485,18 @@ public class ValueLeakageAnalysis {
 			logger.debug("{} ", doc);
 			final Map<String, String> tmpMap = new HashMap<>();
 			tmpMap.put("tradingModel", doc.getString("tradingModel"));
-			final String prn = doc.getString("priceAgreementReferenceName");
-			tmpMap.put("priceAgreementReferenceName", prn);
+			final String prnid = doc.getString("priceAgreementId");
+			tmpMap.put("priceAgreementId", prnid);
+			final String prnN = doc.getString("priceAgreementReferenceName");
+			tmpMap.put("priceAgreementReferenceName", prnN);
 			tmpMap.put("supplierName", doc.getString("supplierName"));
 			tmpMap.put("opco", doc.getString("opcoCode"));
 			tmpMap.put("ola", doc.getString("outlineAgreementNumber"));
 			tmpMap.put("reportPeriod", doc.getString("Report Period"));
 			tmpMap.put(Constants.LEAKAGE_VALUE, doc.getDouble(Constants.LEAKAGE_VALUE).toString());
 			tmpMap.put("vpcOwner", doc.getString("categoryManager"));
+			tmpMap.put("supplierId", doc.getString("supplierId"));
+			tmpMap.put("parentSupplierId", doc.getString("parentSupplierId"));
 			final List<String> g4List = doc.getList("materialGroupL4", String.class);
 			final String strg4List = String.join(",", g4List);
 			tmpMap.put(Constants.PROP_MATERIAL_GROUP_4, strg4List);
@@ -416,7 +504,7 @@ public class ValueLeakageAnalysis {
 			final List<Map<String, Double>> prevVals = (List<Map<String, Double>>) doc.get("prevVals");
 			logger.debug("{}>>>>>>", prevVals);
 			prevVals.forEach(map -> {
-				final Map<String, Double> tMap = lkgMap.get(prn) != null ? lkgMap.get(prn) : new TreeMap<>();
+				final Map<String, Double> tMap = lkgMap.get(prnid) != null ? lkgMap.get(prnid) : new TreeMap<>();
 				map.keySet().forEach(key -> {
 					Double val = tMap.get(key);
 					if (val == null)
@@ -425,7 +513,7 @@ public class ValueLeakageAnalysis {
 					tMap.put(key, val);
 				});
 
-				lkgMap.put(prn, tMap);
+				lkgMap.put(prnid, tMap);
 
 			});
 		});
@@ -462,7 +550,8 @@ public class ValueLeakageAnalysis {
 		}
 
 		final Bson firstProjectVLBson = BasicDBObject.parse("" + "{$project: {" + "tradingModel:1, "
-				+ "priceAgreementReferenceName:1, " + "supplierName:1, " + "opcoCode:1, " + "outlineAgreementNumber:1, "
+				+ "priceAgreementReferenceName:'$priceAgreementId', " + "supplierName:1, " + "opcoCode:1, "
+				+ "outlineAgreementNumber:1, "
 				+ "categoryManager:1, " + "vl: {$slice:['$valueLeakages', 1]}" + "}}");
 		pipeline.add(firstProjectVLBson);
 
@@ -536,7 +625,8 @@ public class ValueLeakageAnalysis {
 		pipeline.add(match(Filters.eq("priceAgreementReferenceName", priceref)));
 
 		final Bson firstProjectVLBson = BasicDBObject.parse("{$project:{" + "tradingModel:1,"
-				+ "priceAgreementReferenceName:1," + "supplierName:1,  " + "opcoCode:1, " + "outlineAgreementNumber:1, "
+				+ "priceAgreementReferenceName:'$priceAgreementId'," + "supplierName:1,  " + "opcoCode:1, "
+				+ "outlineAgreementNumber:1, "
 				+ "lvl1:'$valueLeakageCalcAsPerPeriod', " + "categoryManager : 1" + "}}");
 		pipeline.add(firstProjectVLBson);
 
@@ -590,7 +680,8 @@ public class ValueLeakageAnalysis {
 		pipeline.add(match(Filters.eq("priceAgreementReferenceName", priceref)));
 
 		final Bson firstProjectVLBson = BasicDBObject.parse("{$project:{" + "tradingModel:1,"
-				+ "priceAgreementReferenceName:1," + "supplierName:1,  " + "opcoCode:1, " + "outlineAgreementNumber:1, "
+				+ "priceAgreementReferenceName:'$priceAgreementId'," + "supplierName:1,  " + "opcoCode:1, "
+				+ "outlineAgreementNumber:1, "
 				+ "lvl1:'$valueLeakageCalcAsPerPeriod', " + "categoryManager : 1" + "}}");
 		pipeline.add(firstProjectVLBson);
 

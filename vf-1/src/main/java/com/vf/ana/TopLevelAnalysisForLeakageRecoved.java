@@ -41,6 +41,8 @@ public class TopLevelAnalysisForLeakageRecoved {
 		final String collectionName = Constants.LEAKAGE_RECOVERED_COLLECTION_NAME;
 		final List<Bson> pipeline = new ArrayList<>();
 
+		pipeline.add(BasicDBObject.parse("{$unwind : '$materialGroupL4'},"));
+
 		Map<String, List<String>> filter = null;
 
 		if (argfilter != null) {
@@ -127,6 +129,7 @@ public class TopLevelAnalysisForLeakageRecoved {
 
 		final String collectionName = Constants.LEAKAGE_RECOVERED_COLLECTION_NAME;
 		final List<Bson> pipeline = new ArrayList<>();
+		pipeline.add(BasicDBObject.parse("{$unwind : '$materialGroupL4'},"));
 
 		Map<String, List<String>> filter = null;
 

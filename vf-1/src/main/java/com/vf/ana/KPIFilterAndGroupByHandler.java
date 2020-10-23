@@ -2026,6 +2026,9 @@ public class KPIFilterAndGroupByHandler {
 
 		final List<Bson> pipeline = new ArrayList<>();
 
+		pipeline.add(BasicDBObject.parse("{$unwind : '$materialGroupL4'},"));
+
+
 		Map<String, List<String>> filter = null;
 
 		if (argfilter != null) {
@@ -2051,23 +2054,19 @@ public class KPIFilterAndGroupByHandler {
 
 //		setCommonDateFiltersForPOToLimitFutureDate(pipeline);
 
+		final String q = "" + "{$project:{" + "supplierPartNumber: '$supplierPartNumber', "
+				+ "tradingModel: '$tradingModel' , " + "supplierId: '$supplierId' , "
+				+ "outlineAgreementNumber: '$outlineAgreementNumber', " + "catalogueType: '$catalogueType' , "
+				+ "opcoCode: '$opcoCode', " + "parentSupplierId: '$parentSupplierId' , "
+				+ "materialGroupL4: '$materialGroupL4' , "
+				+ "priceAgreementReferenceName: '$priceAgreementReferenceName',"
+				+ "lvl1: '$valueLeakageCalcAsPerPeriod'" + "}}";
+
 		final Bson firstProjectVLBson = BasicDBObject
-				.parse("" + "{$project:{"
-						+ "supplierPartNumber: '$supplierPartNumber', "
-						+ "tradingModel: '$tradingModel' , "
-						+ "supplierId: '$supplierId' , " 
-						+ "outlineAgreementNumber: '$outlineAgreementNumber', "
-						+ "catalogueType: '$catalogueType' , " 
-						+ "opcoCode: '$opcoCode', "
-						+ "parentSupplierId: '$parentSupplierId' , " 
-						+ "materialGroupL4: '$materialGroupL4' , "
-						+ "priceAgreementReferenceName: '$priceAgreementReferenceName'," 
-						+ "lvl1: '$valueLeakageCalcAsPerPeriod'"
-						+ "}}");
+				.parse(q);
 		pipeline.add(firstProjectVLBson);
 
 //		printDocs(collectionName, pipeline);
-
 		pipeline.add(BasicDBObject.parse("{$unwind : '$lvl1'},"));
 
 //		printDocs(collectionName, pipeline);
@@ -2119,16 +2118,14 @@ public class KPIFilterAndGroupByHandler {
 				+ "} }");
 		pipeline.add(lastValue);
 
-		
 
 		final String projectLV = "{$project : {" + "dim: '$" + groupByPropName + "', " + "lv:'$val', " + "}}";
 		final Bson bPrjOIV = BasicDBObject.parse(projectLV);
 		pipeline.add(bPrjOIV);
-//		common.printDocs(collectionName, pipeline, mongoTemplate);
+		logger.debug("123count = {}", common.getCount(collectionName, pipeline, mongoTemplate));
 
 
 		final String grpByLV = "{$group:{_id: '$dim' , " + Constants.RECOVERED_VALUE + ":{$sum:'$lv'} " + "}}";
-//		common.printDocs(collectionName, pipeline, mongoTemplate);
 
 		pipeline.add(BasicDBObject.parse(grpByLV));
 
@@ -2142,6 +2139,8 @@ public class KPIFilterAndGroupByHandler {
 //			logger.debug("The total count should be {}", count);
 		}
 
+		common.printDocs("111" + collectionName, pipeline, mongoTemplate);
+		logger.debug("count = {}", common.getCount(collectionName, pipeline, mongoTemplate));
 
 		final List<String> kpisV = new ArrayList<>();
 		kpisV.add(Constants.RECOVERED_VALUE);
@@ -2180,6 +2179,7 @@ public class KPIFilterAndGroupByHandler {
 		final String collectionName = Constants.LEAKAGE_RECOVERED_COLLECTION_NAME;
 
 		final List<Bson> pipeline = new ArrayList<>();
+		pipeline.add(BasicDBObject.parse("{$unwind : '$materialGroupL4'},"));
 
 		Map<String, List<String>> filter = null;
 

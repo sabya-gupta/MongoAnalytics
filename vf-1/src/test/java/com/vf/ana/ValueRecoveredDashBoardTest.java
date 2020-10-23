@@ -23,7 +23,7 @@ public class ValueRecoveredDashBoardTest {
 			// KPIFilterAndGroupByHandler
 	public void getAllKPIWithFilter() {
 
-		final String grpByPropName = Constants.PROP_MATERIAL_GROUP_4; // materialGroupL4
+		final String grpByPropName = Constants.PROP_SUPPLIER_PART_NUMBER; // materialGroupL4
 		final String kpiToOrderBy = Constants.KPI_VLREC_VALUE;
 
 		
@@ -67,16 +67,17 @@ public class ValueRecoveredDashBoardTest {
 
 	@Test // TEST FOR TOP LEVEL
 	public void getTotalLeakageRecovered() {
-		final Map<String, List<String>> filter1 = new HashMap<>();
-		final List<String> dates = new ArrayList<>();
-		dates.add("2020-10");
-
-		final List<String> lstSearch = new ArrayList<>();
-		lstSearch.add("K205");
-		filter1.put(Constants.PROP_MATERIAL_GROUP_4, lstSearch);
-
-		final List<String> l1 = new ArrayList<>();
-		topLevelAnalysisForLeakageRecoved.getTotalRecoveredValue(filter1, dates);
+		topLevelAnalysisForLeakageRecoved.getTotalRecoveredValue(null, null);
+//		final Map<String, List<String>> filter1 = new HashMap<>();
+//		final List<String> dates = new ArrayList<>();
+//		dates.add("2020-10");
+//
+//		final List<String> lstSearch = new ArrayList<>();
+//		lstSearch.add("K205");
+//		filter1.put(Constants.PROP_MATERIAL_GROUP_4, lstSearch);
+//
+//		final List<String> l1 = new ArrayList<>();
+//		topLevelAnalysisForLeakageRecoved.getTotalRecoveredValue(filter1, dates);
 	}
 
 	@Test // TEST FOR LAST ONE YEAR
